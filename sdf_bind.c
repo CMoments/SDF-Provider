@@ -1,9 +1,7 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include "sdf_bind.h"
-#include "internal/dso.h"
-#include <openssl/types.h>
-#include "sdf_local.h"
+
 SDF_OpenDevice OpenDevice = NULL;
 SDF_CloseDevice CloseDevice = NULL;
 SDF_OpenSession OpenSession = NULL;
@@ -66,7 +64,7 @@ SDF_ReadFile ReadFile = NULL;
 SDF_WriteFile WriteFile = NULL;
 SDF_DeleteFile DeleteFile = NULL;
 
-
+/*  这里的调试验证类函数，需要软实现，以完成对上边函数的调试。 */
 SDF_GenerateKeyPair_RSA GenerateKeyPair_RSA = NULL;
 SDF_GenerateKeyPair_ECC GenerateKeyPair_ECC = NULL;
 SDF_ExternalPrivateKeyOperation_RSA ExternalPrivateKeyOperation_RSA = NULL;
@@ -80,93 +78,79 @@ SDF_ExternalKeyEncryptInit ExternalKeyEncryptInit = NULL;
 SDF_ExternalKeyDecryptInit ExternalKeyDecryptInit = NULL;
 SDF_ExternalKeyHMACInit ExternalKeyHMACInit = NULL;
 
-int sdf_bind_init(SDF_METHOD *sdfm,DSO *dso) {
-    if (sdfm == NULL) {
-        fprintf(stderr, "SDF_METHOD pointer is NULL\n");
-        return -1;
-    }
-    if (dso == NULL) {
-        fprintf(stderr, "DSO object is NULL\n");
-        return -1;
-    }
-    sdfm->OpenDevice = (SDF_OpenDevice)DSO_bind_func(dso, "SDF_OpenDevice");
-    sdfm->CloseDevice = (SDF_CloseDevice)DSO_bind_func(dso, "SDF_CloseDevice");
-    sdfm->OpenSession = (SDF_OpenSession)DSO_bind_func(dso, "SDF_OpenSession");
-    sdfm->CloseSession = (SDF_CloseSession)DSO_bind_func(dso, "SDF_CloseSession");
-    sdfm->GetDeviceInfo = (SDF_GetDeviceInfo)DSO_bind_func(dso, "SDF_GetDeviceInfo");
-    sdfm->GenerateRandom = (SDF_GenerateRandom)DSO_bind_func(dso, "SDF_GenerateRandom");
-    sdfm->GetPrivateKeyAccessRight = (SDF_GetPrivateKeyAccessRight)DSO_bind_func(dso, "SDF_GetPrivateKeyAccessRight");
-    sdfm->ReleasePrivateKeyAccessRight = (SDF_ReleasePrivateKeyAccessRight)DSO_bind_func(dso, "SDF_ReleasePrivateKeyAccessRight");
-    sdfm->ExportSignPublicKey_RSA = (SDF_ExportSignPublicKey_RSA)DSO_bind_func(dso, "SDF_ExportSignPublicKey_RSA");
-    sdfm->ExportEncPublicKey_RSA = (SDF_ExportEncPublicKey_RSA)DSO_bind_func(dso, "SDF_ExportEncPublicKey_RSA");
-    sdfm->GenerateKeyPair_RSA = (SDF_GenerateKeyPair_RSA)DSO_bind_func(dso, "SDF_GenerateKeyPair_RSA");
-    sdfm->GenerateKeyWithIPK_RSA = (SDF_GenerateKeyWithIPK_RSA)DSO_bind_func(dso, "SDF_GenerateKeyWithIPK_RSA");
-    sdfm->GenerateKeyWithEPK_RSA = (SDF_GenerateKeyWithEPK_RSA)DSO_bind_func(dso, "SDF_GenerateKeyWithEPK_RSA");
-    sdfm->ImportKeyWithISK_RSA = (SDF_ImportKeyWithISK_RSA)DSO_bind_func(dso, "SDF_ImportKeyWithISK_RSA");
-
-    
-    sdfm->ExportSignPublicKey_ECC = (SDF_ExportSignPublicKey_ECC)DSO_bind_func(dso, "SDF_ExportSignPublicKey_ECC");
-    sdfm->ExportEncPublicKey_ECC = (SDF_ExportEncPublicKey_ECC)DSO_bind_func(dso, "SDF_ExportEncPublicKey_ECC");
-    sdfm->GenerateKeyWithIPK_ECC = (SDF_GenerateKeyWithIPK_ECC)DSO_bind_func(dso, "SDF_GenerateKeyWithIPK_ECC");
-    sdfm->GenerateKeyWithEPK_ECC = (SDF_GenerateKeyWithEPK_ECC)DSO_bind_func(dso, "SDF_GenerateKeyWithEPK_ECC");
-    sdfm->ImportKeyWithISK_ECC = (SDF_ImportKeyWithISK_ECC)DSO_bind_func(dso, "SDF_ImportKeyWithISK_ECC");
-    sdfm->GenerateAgreementDataWithECC = (SDF_GenerateAgreementDataWithECC)DSO_bind_func(dso, "SDF_GenerateAgreementDataWithECC");
-    sdfm->GenerateKeyWithECC = (SDF_GenerateKeyWithECC)DSO_bind_func(dso, "SDF_GenerateKeyWithECC");
-    sdfm->GenerateAgreementDataAndKeyWithECC = (SDF_GenerateAgreementDataAndKeyWithECC)DSO_bind_func(dso, "SDF_GenerateAgreementDataAndKeyWithECC");
-    sdfm->GenerateKeyWithKEK = (SDF_GenerateKeyWithKEK)DSO_bind_func(dso, "SDF_GenerateKeyWithKEK");
-    sdfm->ImportKeyWithKEK = (SDF_ImportKeyWithKEK)DSO_bind_func(dso, "SDF_ImportKeyWithKEK");
-    sdfm->DestroyKey = (SDF_DestroyKey)DSO_bind_func(dso, "SDF_DestroyKey");
-    sdfm->ExternalPublicKeyOperation_RSA = (SDF_ExternalPublicKeyOperation_RSA)DSO_bind_func(dso, "SDF_ExternalPublicKeyOperation_RSA");
-    sdfm->InternalPublicKeyOperation_RSA = (SDF_InternalPublicKeyOperation_RSA)DSO_bind_func(dso, "SDF_InternalPublicKeyOperation_RSA");
-    sdfm->InternalPrivateKeyOperation_RSA = (SDF_InternalPrivateKeyOperation_RSA)DSO_bind_func(dso, "SDF_InternalPrivateKeyOperation_RSA");
-    sdfm->ExternalVerify_ECC = (SDF_ExternalVerify_ECC)DSO_bind_func(dso, "SDF_ExternalVerify_ECC");
-    sdfm->InternalSign_ECC = (SDF_InternalSign_ECC)DSO_bind_func(dso, "SDF_InternalSign_ECC");
-    sdfm->InternalVerify_ECC = (SDF_InternalVerify_ECC)DSO_bind_func(dso, "SDF_InternalVerify_ECC");
-    sdfm->ExternalEncrypt_ECC = (SDF_ExternalEncrypt_ECC)DSO_bind_func(dso, "SDF_ExternalEncrypt_ECC");
-    sdfm->Encrypt = (SDF_Encrypt)DSO_bind_func(dso, "SDF_Encrypt");
-    sdfm->Decrypt = (SDF_Decrypt)DSO_bind_func(dso, "SDF_Decrypt");
-    sdfm->CalculateMAC = (SDF_CalculateMAC)DSO_bind_func(dso, "SDF_CalculateMAC");
-    #ifdef SDF_VERSION_2023 
-    sdfm->AuthEnc = (SDF_AuthEnc)DSO_bind_func(dso, "SDF_AuthEnc");
-    sdfm->AuthDec = (SDF_AuthDec)DSO_bind_func(dso, "SDF_AuthDec");
-    sdfm->EncryptInit = (SDF_EncryptInit)DSO_bind_func(dso, "SDF_EncryptInit");
-    sdfm->EncryptUpdate = (SDF_EncryptUpdate)DSO_bind_func(dso, "SDF_EncryptUpdate");
-    sdfm->EncryptFinal = (SDF_EncryptFinal)DSO_bind_func(dso, "SDF_EncryptFinal");
-    sdfm->DecryptInit = (SDF_DecryptInit)DSO_bind_func(dso, "SDF_DecryptInit");
-    sdfm->DecryptUpdate = (SDF_DecryptUpdate)DSO_bind_func(dso, "SDF_DecryptUpdate");
-    sdfm->DecryptFinal = (SDF_DecryptFinal)DSO_bind_func(dso, "SDF_DecryptFinal");
-    sdfm->CalculateMACInit = (SDF_CalculateMACInit)DSO_bind_func(dso, "SDF_CalculateMACInit");
-    sdfm->CalculateMACUpdate = (SDF_CalculateMACUpdate)DSO_bind_func(dso, "SDF_CalculateMACUpdate");
-    sdfm->CalculateMACFinal = (SDF_CalculateMACFinal)DSO_bind_func(dso, "SDF_CalculateMACFinal");
-    sdfm->AuthEncInit = (SDF_AuthEncInit)DSO_bind_func(dso, "SDF_AuthEncInit");
-    sdfm->AuthEncUpdate = (SDF_AuthEncUpdate)DSO_bind_func(dso, "SDF_AuthEncUpdate");
-    sdfm->AuthEncFinal = (SDF_AuthEncFinal)DSO_bind_func(dso, "SDF_AuthEncFinal");
-    sdfm->AuthDecInit = (SDF_AuthDecInit)DSO_bind_func(dso, "SDF_AuthDecInit");
-    sdfm->AuthDecUpdate = (SDF_AuthDecUpdate)DSO_bind_func(dso, "SDF_AuthDecUpdate");
-    sdfm->AuthDecFinal = (SDF_AuthDecFinal)DSO_bind_func(dso, "SDF_AuthDecFinal");
-    sdfm->HMACInit = (SDF_HMACInit)DSO_bind_func(dso, "SDF_HMACInit");
-    sdfm->HMACUpdate = (SDF_HMACUpdate)DSO_bind_func(dso, "SDF_HMACUpdate");
-    sdfm->HMACFinal = (SDF_HMACFinal)DSO_bind_func(dso, "SDF_HMACFinal");
-    #endif
-    sdfm->HashInit = (SDF_HashInit)DSO_bind_func(dso, "SDF_HashInit");
-    sdfm->HashUpdate = (SDF_HashUpdate)DSO_bind_func(dso, "SDF_HashUpdate");
-    sdfm->HashFinal = (SDF_HashFinal)DSO_bind_func(dso, "SDF_HashFinal");
-    sdfm->CreateFile = (SDF_CreateFile)DSO_bind_func(dso, "SDF_CreateFile");
-    sdfm->ReadFile = (SDF_ReadFile)DSO_bind_func(dso, "SDF_ReadFile");
-    sdfm->WriteFile = (SDF_WriteFile)DSO_bind_func(dso, "SDF_WriteFile");
-    sdfm->DeleteFile = (SDF_DeleteFile)DSO_bind_func(dso, "SDF_DeleteFile");
-    sdfm->GenerateKeyPair_ECC = (SDF_GenerateKeyPair_ECC)DSO_bind_func(dso, "SDF_GenerateKeyPair_ECC");
-    #ifdef SDF_VERSION_2023
-    sdfm->ExternalPrivateKeyOperation_RSA = (SDF_ExternalPrivateKeyOperation_RSA)DSO_bind_func(dso, "SDF_ExternalPrivateKeyOperation_RSA");
-    sdfm->ExternalSign_ECC = (SDF_ExternalSign_ECC)DSO_bind_func(dso, "SDF_ExternalSign_ECC");
-    sdfm->ExternalDecrypt_ECC = (SDF_ExternalDecrypt_ECC)DSO_bind_func(dso, "SDF_ExternalDecrypt_ECC");
-    sdfm->ExternalSign_SM9 = (SDF_ExternalSign_SM9)DSO_bind_func(dso, "SDF_ExternalSign_SM9");
-    sdfm->ExternalDecrypt_SM9 = (SDF_ExternalDecrypt_SM9)DSO_bind_func(dso, "SDF_ExternalDecrypt_SM9");
-    sdfm->ExternalKeyEncrypt = (SDF_ExternalKeyEncrypt)DSO_bind_func(dso, "SDF_ExternalKeyEncrypt");
-    sdfm->ExternalKeyDecrypt = (SDF_ExternalKeyDecrypt)DSO_bind_func(dso, "SDF_ExternalKeyDecrypt");
-    sdfm->ExternalKeyEncryptInit = (SDF_ExternalKeyEncryptInit)DSO_bind_func(dso, "SDF_ExternalKeyEncryptInit");
-    sdfm->ExternalKeyDecryptInit = (SDF_ExternalKeyDecryptInit)DSO_bind_func(dso, "SDF_ExternalKeyDecryptInit");
-    sdfm->ExternalKeyHMACInit = (SDF_ExternalKeyHMACInit)DSO_bind_func(dso, "SDF_ExternalKeyHMACInit");
-    #endif
+int sdf_bind_init(void *handle) {
+    OpenDevice = (SDF_OpenDevice)dlsym(handle, "SDF_OpenDevice");
+    CloseDevice = (SDF_CloseDevice)dlsym(handle, "SDF_CloseDevice");
+    OpenSession = (SDF_OpenSession)dlsym(handle, "SDF_OpenSession");
+    CloseSession = (SDF_CloseSession)dlsym(handle, "SDF_CloseSession");
+    GetDeviceInfo = (SDF_GetDeviceInfo)dlsym(handle, "SDF_GetDeviceInfo");
+    GenerateRandom = (SDF_GenerateRandom)dlsym(handle, "SDF_GenerateRandom");
+    GetPrivateKeyAccessRight = (SDF_GetPrivateKeyAccessRight)dlsym(handle, "SDF_GetPrivateKeyAccessRight");
+    ReleasePrivateKeyAccessRight = (SDF_ReleasePrivateKeyAccessRight)dlsym(handle, "SDF_ReleasePrivateKeyAccessRight");
+    ExportSignPublicKey_RSA = (SDF_ExportSignPublicKey_RSA)dlsym(handle, "SDF_ExportSignPublicKey_RSA");
+    ExportEncPublicKey_RSA = (SDF_ExportEncPublicKey_RSA)dlsym(handle, "SDF_ExportEncPublicKey_RSA");
+    GenerateKeyWithIPK_RSA = (SDF_GenerateKeyWithIPK_RSA)dlsym(handle, "SDF_GenerateKeyWithIPK_RSA");
+    GenerateKeyWithEPK_RSA = (SDF_GenerateKeyWithEPK_RSA)dlsym(handle, "SDF_GenerateKeyWithEPK_RSA");
+    ImportKeyWithISK_RSA = (SDF_ImportKeyWithISK_RSA)dlsym(handle, "SDF_ImportKeyWithISK_RSA");
+    ExportSignPublicKey_ECC = (SDF_ExportSignPublicKey_ECC)dlsym(handle, "SDF_ExportSignPublicKey_ECC");
+    ExportEncPublicKey_ECC = (SDF_ExportEncPublicKey_ECC)dlsym(handle, "SDF_ExportEncPublicKey_ECC");
+    GenerateKeyWithIPK_ECC = (SDF_GenerateKeyWithIPK_ECC)dlsym(handle, "SDF_GenerateKeyWithIPK_ECC");
+    GenerateKeyWithEPK_ECC = (SDF_GenerateKeyWithEPK_ECC)dlsym(handle, "SDF_GenerateKeyWithEPK_ECC");
+    ImportKeyWithISK_ECC = (SDF_ImportKeyWithISK_ECC)dlsym(handle, "SDF_ImportKeyWithISK_ECC");
+    GenerateAgreementDataWithECC = (SDF_GenerateAgreementDataWithECC)dlsym(handle, "SDF_GenerateAgreementDataWithECC");
+    GenerateKeyWithECC = (SDF_GenerateKeyWithECC)dlsym(handle, "SDF_GenerateKeyWithECC");
+    GenerateAgreementDataAndKeyWithECC = (SDF_GenerateAgreementDataAndKeyWithECC)dlsym(handle, "SDF_GenerateAgreementDataAndKeyWithECC");
+    GenerateKeyWithKEK = (SDF_GenerateKeyWithKEK)dlsym(handle, "SDF_GenerateKeyWithKEK");
+    ImportKeyWithKEK = (SDF_ImportKeyWithKEK)dlsym(handle, "SDF_ImportKeyWithKEK");
+    DestroyKey = (SDF_DestroyKey)dlsym(handle, "SDF_DestroyKey");
+    ExternalPublicKeyOperation_RSA = (SDF_ExternalPublicKeyOperation_RSA)dlsym(handle, "SDF_ExternalPublicKeyOperation_RSA");
+    InternalPublicKeyOperation_RSA = (SDF_InternalPublicKeyOperation_RSA)dlsym(handle, "SDF_InternalPublicKeyOperation_RSA");
+    InternalPrivateKeyOperation_RSA = (SDF_InternalPrivateKeyOperation_RSA)dlsym(handle, "SDF_InternalPrivateKeyOperation_RSA");
+    ExternalVerify_ECC = (SDF_ExternalVerify_ECC)dlsym(handle, "SDF_ExternalVerify_ECC");
+    InternalSign_ECC = (SDF_InternalSign_ECC)dlsym(handle, "SDF_InternalSign_ECC");
+    InternalVerify_ECC = (SDF_InternalVerify_ECC)dlsym(handle, "SDF_InternalVerify_ECC");
+    ExternalEncrypt_ECC = (SDF_ExternalEncrypt_ECC)dlsym(handle, "SDF_ExternalEncrypt_ECC");
+    Encrypt = (SDF_Encrypt)dlsym(handle, "SDF_Encrypt");
+    Decrypt = (SDF_Decrypt)dlsym(handle, "SDF_Decrypt");
+    CalculateMAC = (SDF_CalculateMAC)dlsym(handle, "SDF_CalculateMAC");
+    AuthEnc = (SDF_AuthEnc)dlsym(handle, "SDF_AuthEnc");
+    AuthDec = (SDF_AuthDec)dlsym(handle, "SDF_AuthDec");
+    EncryptInit = (SDF_EncryptInit)dlsym(handle, "SDF_EncryptInit");
+    EncryptUpdate = (SDF_EncryptUpdate)dlsym(handle, "SDF_EncryptUpdate");
+    EncryptFinal = (SDF_EncryptFinal)dlsym(handle, "SDF_EncryptFinal");
+    DecryptInit = (SDF_DecryptInit)dlsym(handle, "SDF_DecryptInit");
+    DecryptUpdate = (SDF_DecryptUpdate)dlsym(handle, "SDF_DecryptUpdate");
+    DecryptFinal = (SDF_DecryptFinal)dlsym(handle, "SDF_DecryptFinal");
+    CalculateMACInit = (SDF_CalculateMACInit)dlsym(handle, "SDF_CalculateMACInit");
+    CalculateMACUpdate = (SDF_CalculateMACUpdate)dlsym(handle, "SDF_CalculateMACUpdate");
+    CalculateMACFinal = (SDF_CalculateMACFinal)dlsym(handle, "SDF_CalculateMACFinal");
+    AuthEncInit = (SDF_AuthEncInit)dlsym(handle, "SDF_AuthEncInit");
+    AuthEncUpdate = (SDF_AuthEncUpdate)dlsym(handle, "SDF_AuthEncUpdate");
+    AuthEncFinal = (SDF_AuthEncFinal)dlsym(handle, "SDF_AuthEncFinal");
+    AuthDecInit = (SDF_AuthDecInit)dlsym(handle, "SDF_AuthDecInit");
+    AuthDecUpdate = (SDF_AuthDecUpdate)dlsym(handle, "SDF_AuthDecUpdate");
+    AuthDecFinal = (SDF_AuthDecFinal)dlsym(handle, "SDF_AuthDecFinal");
+    HMACInit = (SDF_HMACInit)dlsym(handle, "SDF_HMACInit");
+    HMACUpdate = (SDF_HMACUpdate)dlsym(handle, "SDF_HMACUpdate");
+    HMACFinal = (SDF_HMACFinal)dlsym(handle, "SDF_HMACFinal");
+    HashInit = (SDF_HashInit)dlsym(handle, "SDF_HashInit");
+    HashUpdate = (SDF_HashUpdate)dlsym(handle, "SDF_HashUpdate");
+    HashFinal = (SDF_HashFinal)dlsym(handle, "SDF_HashFinal");
+    CreateFile = (SDF_CreateFile)dlsym(handle, "SDF_CreateFile");
+    ReadFile = (SDF_ReadFile)dlsym(handle, "SDF_ReadFile");
+    WriteFile = (SDF_WriteFile)dlsym(handle, "SDF_WriteFile");
+    DeleteFile = (SDF_DeleteFile)dlsym(handle, "SDF_DeleteFile");
+    GenerateKeyPair_RSA = (SDF_GenerateKeyPair_RSA)dlsym(handle, "SDF_GenerateKeyPair_RSA");
+    GenerateKeyPair_ECC = (SDF_GenerateKeyPair_ECC)dlsym(handle, "SDF_GenerateKeyPair_ECC");
+    ExternalPrivateKeyOperation_RSA = (SDF_ExternalPrivateKeyOperation_RSA)dlsym(handle, "SDF_ExternalPrivateKeyOperation_RSA");
+    ExternalSign_ECC = (SDF_ExternalSign_ECC)dlsym(handle, "SDF_ExternalSign_ECC");
+    ExternalDecrypt_ECC = (SDF_ExternalDecrypt_ECC)dlsym(handle, "SDF_ExternalDecrypt_ECC");
+    ExternalSign_SM9 = (SDF_ExternalSign_SM9)dlsym(handle, "SDF_ExternalSign_SM9");
+    ExternalDecrypt_SM9 = (SDF_ExternalDecrypt_SM9)dlsym(handle, "SDF_ExternalDecrypt_SM9");
+    ExternalKeyEncrypt = (SDF_ExternalKeyEncrypt)dlsym(handle, "SDF_ExternalKeyEncrypt");
+    ExternalKeyDecrypt = (SDF_ExternalKeyDecrypt)dlsym(handle, "SDF_ExternalKeyDecrypt");
+    ExternalKeyEncryptInit = (SDF_ExternalKeyEncryptInit)dlsym(handle, "SDF_ExternalKeyEncryptInit");
+    ExternalKeyDecryptInit = (SDF_ExternalKeyDecryptInit)dlsym(handle, "SDF_ExternalKeyDecryptInit");
+    ExternalKeyHMACInit = (SDF_ExternalKeyHMACInit)dlsym(handle, "SDF_ExternalKeyHMACInit");
     return 0;
 }
