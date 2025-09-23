@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "sdf_defs.h": "c"
+    }
+}

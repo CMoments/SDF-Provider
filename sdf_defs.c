@@ -39,7 +39,94 @@ const char* SDF_GetErrorString(int err) {
         case SDR_INARGERR: return "SDR_INARGERR";
         case SDR_OUTARGERR: return "SDR_OUTARGERR";
         case SDR_USERIDERR: return "SDR_USERIDERR";
-        default: return "UNKNOWN_ERROR";
+
+
+         // 通用错误
+        case SWR_INVALID_PARAMETERS:
+            return "Invalid parameters";
+        case SWR_FILE_ALREADY_EXIST:
+            return "File already exists";
+        case SWR_SEM_TIMEOUT:
+            return "Semaphore timeout";
+        case SWR_CONFIG_ERR:
+            return "Configuration error";
+            
+        // 硬件错误
+        case SWR_CARD_UNKNOWERR:
+            return "Unknown hardware error";
+        case SWR_CARD_NOTSUPPORT:
+            return "Unsupported interface call";
+        case SWR_CARD_COMMFALL:
+            return "Device communication failure";
+        case SWR_CARD_HARDFALL:
+            return "Crypto module no response";
+        case SWR_CARD_OPENDEVICE:
+            return "Open device failed";
+        case SWR_CARD_OPENSESSION:
+            return "Create session failed";
+        case SWR_CARD_PARDENY:
+            return "No private key access permission";
+        case SWR_CARD_KEYNOTEXIST:
+            return "Non-existent key call";
+        case SWR_CARD_ALGNOTSUPPORT:
+            return "Unsupported algorithm call";
+        case SWR_CARD_ALGMODNOTSUPPORT:
+            return "Unsupported algorithm mode call";
+        case SWR_CARD_PKOPERR:
+            return "Public key operation failed";
+        case SWR_CARD_SKOPERR:
+            return "Private key operation failed";
+        case SWR_CARD_SIGNERR:
+            return "Signature operation failed";
+        case SWR_CARD_VERIFYERR:
+            return "Signature verification failed";
+        case SWR_CARD_SYMOPERR:
+            return "Symmetric algorithm operation failed";
+        case SWR_CARD_STEPERR:
+            return "Multi-step operation sequence error";
+        case SWR_CARD_FILESIZEERR:
+            return "File size exceeds limit";
+        case SWR_CARD_FILENOEXIST:
+            return "Specified file does not exist";
+        case SWR_CARD_FILEOFSERR:
+            return "File offset error";
+        case SWR_CARD_KEYTYPEERR:
+            return "Key type error";
+        case SWR_CARD_KEYERR:
+            return "Key error";
+        case SWR_CARD_BUFFER_TOO_SMALL:
+            return "Buffer too small for parameters";
+        case SWR_CARD_DATA_PAD:
+            return "Data not properly padded";
+        case SWR_CARD_DATA_SIZE:
+            return "Plaintext/ciphertext length does not meet algorithm requirements";
+        case SWR_CARD_CRYPTO_NOT_INIT:
+            return "Crypto operation not initialized";
+        case SWR_CARD_MANAGEMENT_DENY:
+            return "Management permission denied";
+        case SWR_CARD_OPERATION_DENY:
+            return "Operation permission denied";
+        case SWR_CARD_DEVICE_STATUS_ERR:
+            return "Device status does not satisfy operation";
+        case SWR_CARD_LOGIN_ERR:
+            return "Login failed";
+        case SWR_CARD_USERID_ERR:
+            return "User ID number/quantity error";
+        case SWR_CARD_PARAMENT_ERR:
+            return "Parameter error";
+            
+        // 读卡器错误
+        case SWR_CARD_READER_PIN_ERR:
+            return "PIN password error";
+        case SWR_CARD_READER_NO_CARD:
+            return "IC card not inserted";
+        case SWR_CARD_READER_CARD_INSERT:
+            return "IC card insertion direction error or not in place";
+        case SWR_CARD_READER_CARD_TYPE:
+            return "IC card type error";
+        default:
+            // 如果不是自定义错误码，返回原始错误描述
+            return SDF_GetErrorString(err);
     }
 }
 

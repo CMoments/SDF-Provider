@@ -58,7 +58,8 @@ typedef struct ECCCipher_st{
 	unsigned char C[1];
 	// Extend sizeof(C) to SM2_MAX_PLAINTEXT_SIZE
 	// gmssl/sm2.h: SM2_MAX_PLAINTEXT_SIZE = 255
-	unsigned char C_[254]; 
+	// unsigned char C_[254];
+    // unsigned char *C;
 } ECCCipher;
 typedef struct ECCSignature_st{
     unsigned char r[ECCref_MAX_LEN];
@@ -294,3 +295,56 @@ typedef struct SM9refEncEnvelopedKey_st{
 #define SDR_USERIDERR (SDR_BASE + 0x0000001F)        /* 用户标识错误 */
 
     /* 0x20–0xFFFFFF 区段为预留，如需自定义错误码，请从 0x00000020 起按顺序定义 */
+
+
+#define SWR_BASE (SDR_BASE + 0x00010000)
+// 通用错误码
+#define SWR_INVALID_PARAMETERS    (SWR_BASE + 0x00000005)    // 参数错误
+#define SWR_FILE_ALREADY_EXIST    (SWR_BASE + 0x00000006)    // 已存在同名文件
+#define SWR_SEM_TIMEOUT           (SWR_BASE + 0x00000200)    // 超时错误
+#define SWR_CONFIG_ERR            (SWR_BASE + 0x00000301)    // 配置文件错误
+
+// 密码卡硬件错误码基础值
+#define SWR_CARD_BASE             (SDR_BASE + 0x00020000)
+
+// 密码卡硬件错误码
+#define SWR_CARD_UNKNOWERR        (SWR_CARD_BASE + 0x00000001)  // 未知硬件错误
+#define SWR_CARD_NOTSUPPORT       (SWR_CARD_BASE + 0x00000002)  // 不支持的接口调用
+#define SWR_CARD_COMMFALL         (SWR_CARD_BASE + 0x00000003)  // 与设备通信失败
+#define SWR_CARD_HARDFALL         (SWR_CARD_BASE + 0x00000004)  // 运算模块无响应
+#define SWR_CARD_OPENDEVICE       (SWR_CARD_BASE + 0x00000005)  // 打开设备失败
+#define SWR_CARD_OPENSESSION      (SWR_CARD_BASE + 0x00000006)  // 创建会话失败
+#define SWR_CARD_PARDENY          (SWR_CARD_BASE + 0x00000007)  // 无私钥使用权限
+#define SWR_CARD_KEYNOTEXIST      (SWR_CARD_BASE + 0x00000008)  // 不存在的密钥调用
+#define SWR_CARD_ALGNOTSUPPORT    (SWR_CARD_BASE + 0x00000009)  // 不支持的算法调用
+#define SWR_CARD_ALGMODNOTSUPPORT (SWR_CARD_BASE + 0x00000010)  // 不支持的算法模式调用
+#define SWR_CARD_PKOPERR          (SWR_CARD_BASE + 0x00000011)  // 公钥运算失败
+#define SWR_CARD_SKOPERR          (SWR_CARD_BASE + 0x00000012)  // 私钥运算失败
+#define SWR_CARD_SIGNERR          (SWR_CARD_BASE + 0x00000013)  // 签名运算失败
+#define SWR_CARD_VERIFYERR        (SWR_CARD_BASE + 0x00000014)  // 验证签名失败
+#define SWR_CARD_SYMOPERR         (SWR_CARD_BASE + 0x00000015)  // 对称算法运算失败
+#define SWR_CARD_STEPERR          (SWR_CARD_BASE + 0x00000016)  // 多步运算步骤错误
+#define SWR_CARD_FILESIZEERR      (SWR_CARD_BASE + 0x00000017)  // 文件长度超出限制
+#define SWR_CARD_FILENOEXIST      (SWR_CARD_BASE + 0x00000018)  // 指定的文件不存在
+#define SWR_CARD_FILEOFSERR       (SWR_CARD_BASE + 0x00000019)  // 文件起始位置错误
+#define SWR_CARD_KEYTYPEERR       (SWR_CARD_BASE + 0x00000020)  // 密钥类型错误
+#define SWR_CARD_KEYERR           (SWR_CARD_BASE + 0x00000021)  // 密钥错误
+#define SWR_CARD_BUFFER_TOO_SMALL (SWR_CARD_BASE + 0x00000101)  // 接收参数的缓存区太小
+#define SWR_CARD_DATA_PAD         (SWR_CARD_BASE + 0x00000102)  // 数据没有按正确格式填充
+#define SWR_CARD_DATA_SIZE        (SWR_CARD_BASE + 0x00000103)  // 明文或密文长度不符合相应的算法要求
+#define SWR_CARD_CRYPTO_NOT_INIT  (SWR_CARD_BASE + 0x00000104)  // 该错误表明没有为相应的算法调用初始化函数
+#define SWR_CARD_MANAGEMENT_DENY  (SWR_CARD_BASE + 0x00001001)  // 管理权限不满足
+#define SWR_CARD_OPERATION_DENY   (SWR_CARD_BASE + 0x00001002)  // 操作权限不满足
+#define SWR_CARD_DEVICE_STATUS_ERR (SWR_CARD_BASE + 0x00001003) // 当前设备状态不满足现有操作
+#define SWR_CARD_LOGIN_ERR        (SWR_CARD_BASE + 0x00001011)  // 登录失败
+#define SWR_CARD_USERID_ERR       (SWR_CARD_BASE + 0x00001012)  // 用户 ID 数目/号码错误
+#define SWR_CARD_PARAMENT_ERR     (SWR_CARD_BASE + 0x00001013)  // 参数错误
+
+// 读卡器错误码基础值
+#define SWR_CARD_READER_BASE      (SDR_BASE + 0x00030000)
+
+// 读卡器错误码
+#define SWR_CARD_READER_PIN_ERR   (SWR_CARD_READER_BASE + 0x000063C0)  // PIN 口令错误
+#define SWR_CARD_READER_NO_CARD   (SWR_CARD_READER_BASE + 0x0000FF01)  // IC 未插入
+#define SWR_CARD_READER_CARD_INSERT (SWR_CARD_READER_BASE + 0x0000FF02) // IC 插入方向错误或不到位
+#define SWR_CARD_READER_CARD_TYPE (SWR_CARD_READER_BASE + 0x0000FF03)  // IC 类型错误

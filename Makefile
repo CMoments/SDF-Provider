@@ -4,7 +4,7 @@ OBJS=main.o sdf_bind.o sdf_defs.o testcases.o
 all: main
 
 main: $(OBJS)
-	$(CC) $(CFLAGS) -o main $^ -L. -lsoftsdf -ldl -lssl -lcrypto
+	$(CC) $(CFLAGS) -o main $^ -L. -lswsds -ldl -lssl -lcrypto
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $<

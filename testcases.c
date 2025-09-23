@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include "AlgMark.h"
 testcase_t testcases[] = {
     {"Test_Device", Test_Device},
     {"Test_Session", Test_Session},
@@ -95,7 +95,7 @@ int  Test_Device(){
     return ret;
 }
 int  Test_Session(){
-    int ret = -1;
+    unsigned int  ret = 0;
     void *hDevice = NULL;
     void *hSession = NULL;
     ret = OpenDevice(&hDevice);
@@ -113,6 +113,7 @@ int  Test_Session(){
         goto cleanup;
     }
     ret = CloseSession(hSession);
+    hSession = NULL;
     if (ret != SDR_OK){
         printf("CloseSession failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
@@ -147,12 +148,12 @@ int Test_GetDeviceInfo(){
         printf("IssuerName: %s\n", deviceInfo.IssuerName);
         printf("SerialNumber: %s\n", deviceInfo.SerialNumber);
         printf("FirmwareVersion: %s\n", deviceInfo.FirmwareVersion);
-        printf("DeviceVersion: %u\n", deviceInfo.DeviceVersion);
-        printf("StandardVersion: %u\n", deviceInfo.StandardVersion);
-        printf("AsymAlgAbility: [%u, %u]\n", deviceInfo.AsymAlgAbility[0], deviceInfo.AsymAlgAbility[1]);
-        printf("SymAlgAbility: %u\n", deviceInfo.SymAlgAbility);
-        printf("HashAlgAbility: %u\n", deviceInfo.HashAlgAbility);
-        printf("BufferSize: %u\n", deviceInfo.BufferSize);
+        printf("DeviceVersion: %08x\n", deviceInfo.DeviceVersion);
+        printf("StandardVersion: %d\n", deviceInfo.StandardVersion);
+        printf("AsymAlgAbility: [%08x, %08x]\n", deviceInfo.AsymAlgAbility[0], deviceInfo.AsymAlgAbility[1]);
+        printf("SymAlgAbility: %08x\n", deviceInfo.SymAlgAbility);
+        printf("HashAlgAbility: %08x\n", deviceInfo.HashAlgAbility);
+        printf("BufferSize: %d\n", deviceInfo.BufferSize);
         printf("===============================================\n");
     } else {
         printf("Failed GetDeviceInfo: %s\n", SDF_GetErrorString(ret));
@@ -289,6 +290,7 @@ int Test_ExportEncPublic_RSA(){
     if(ret != SDR_OK){
         printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
+
     }
     ret = OpenSession(hDevice, &hSession);
     if(ret != SDR_OK){
@@ -325,12 +327,11 @@ int Test_GenerateKeyWithIPK_RSA(){
     int ret = -1;
     void *hDevice = NULL;
     void *hSession = NULL;
-    void *hKey = NULL;
     
     // 密码设备存储的密钥对的索引值
     unsigned int IPKIndex = 1;
     char *password = "P@ssw0rd";
-    unsigned int keyBits = 2048;
+    unsigned int keyBits = 4096;
     ret = OpenDevice(&hDevice);
     if(ret != SDR_OK){
         printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret));
@@ -343,22 +344,19 @@ int Test_GenerateKeyWithIPK_RSA(){
     }
 
     GetPrivateKeyAccessRight(hSession, IPKIndex, (unsigned char *)password, (unsigned int)strlen(password));
-    // 缓冲区指针，用于存放返回的密钥密文
-    unsigned char *pucKey = NULL;
-    // 返回的密钥密文长度
-    unsigned int *pubKeyLength = NULL;
-
+    unsigned int outKeylen;
+    void * hKey = NULL;
     // hKey：返回的会话密钥句柄，用于后续使用这个会话密钥
+    unsigned char pucKey[512];
+    // ret = GenerateKeyWithIPK_RSA(hSession, IPKIndex, keyBits, pucKey, &pubKeyLength, &hKey);
+    // AES密钥长度：128位（16字节）、192位（24字节）和256位（32字节）。
+    int nKeylen = 24,nKeyIndex = 1;
+	ret = GenerateKeyWithIPK_RSA(hSession, nKeyIndex, nKeylen * 8, pucKey, &outKeylen, &hKey);
 
-    pucKey = (unsigned char*)malloc(256);
-    pubKeyLength = (unsigned int*)malloc(sizeof(unsigned int));
-    if(!pucKey || !pubKeyLength){ printf("malloc failed\n"); ret = -1; goto cleanup; }
-    *pubKeyLength = 256; memset(pucKey,0,256);
-    ret = GenerateKeyWithIPK_RSA(hSession, IPKIndex, keyBits, pucKey, pubKeyLength, &hKey);
     printf("GenerateKeyWithIPK_RSA: %s\n", SDF_GetErrorString(ret));
 cleanup:
-    if(pucKey) free(pucKey);
-    if(pubKeyLength) free(pubKeyLength);
+    // if(pucKey) free(pucKey);
+    // if(pubKeyLength) free(pubKeyLength);
     if(hSession){ CloseSession(hSession);} 
     if(hDevice){ CloseDevice(hDevice);} 
     return ret;
@@ -373,7 +371,7 @@ int Test_GenerateKeyWithEPK_RSA(){
     void *hKey = NULL;
     unsigned int keyIndex = 1;
     char *password = "P@ssw0rd";
-    unsigned int keyBits = 2048;
+    unsigned int keyBits = 24;
     RSArefPublicKey *pucPublicKey = NULL;
     unsigned char *pucKey = NULL;
     unsigned int *pubKeyLength = NULL;
@@ -395,6 +393,11 @@ int Test_GenerateKeyWithEPK_RSA(){
     memset(pucPublicKey,0,sizeof(RSArefPublicKey)); memset(pucKey,0,256); *pubKeyLength = 256;
     ret = GenerateKeyWithEPK_RSA(hSession, keyBits, pucPublicKey,pucKey,pubKeyLength, &hKey);
     printf("GenerateKeyWithEPK_RSA: %s\n", SDF_GetErrorString(ret));
+    // int nKeylen = 16;
+    // unsigned char pucKey[512];
+    
+	// ret = GenerateKeyWithEPK_RSAEx(hSession, nKeylen * 8, &pubKey, pucKey, &outKeylen, phKeyHandle);
+
 cleanup:
     if(hSession){ CloseSession(hSession);} 
     if(hDevice){ CloseDevice(hDevice);} 
@@ -424,20 +427,25 @@ int Test_ImportKeyWithISK_RSA(){
     unsigned int ISKIndex = 1;
 
     // 缓冲区指针，用于存放输入的密钥密文
-    unsigned char *pucKey = NULL;
-    unsigned int puiKeyLength = 0;
+    // unsigned char *pucKey = NULL;
     void * phKeyHandle = NULL;
     GetPrivateKeyAccessRight(hSession, ISKIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
     // 由于GenerateKeyWithEPK_RSA未被softsdf实现
     // unsigned char *pucKey;
     // pucKey = (unsigned char *)malloc(1024);
     // GenerateKeyWithEPK_RSA(hSession, ISKIndex, (unsigned char *)"P@ssw0rd",(unsigned int)strlen("P@ssw0rd"))
-    pucKey = (unsigned char*)malloc(256); if(!pucKey){ printf("malloc failed\n"); ret = -1; goto cleanup; }
-    memset(pucKey,0,256); puiKeyLength = 256;
-    ret = ImportKeyWithISK_RSA(hSession,ISKIndex,pucKey,puiKeyLength,phKeyHandle);
+    // pucKey = (unsigned char*)malloc(256); if(!pucKey){ printf("malloc failed\n"); ret = -1; goto cleanup; }
+    // memset(pucKey,0,256); puiKeyLength = 24;
+    unsigned char pucKey[512];
+    int nKeylen = 16;
+    // ExportEncPublicKey_RSA(hSession, KeyIndex, pucPublicKey);
+    // GenerateKeyWithEPK_RSA(hSession, KeyBits, AlgID, pucPublicKey, pucKey, &phKeyHandle);
+    // ret = ImportKeyWithISK_RSA(hSession, ISKIndex ,pucKey ,KeyLength, phKeyHandle);
+	ret = ImportKeyWithISK_RSA(hSession, ISKIndex, pucKey, nKeylen, phKeyHandle);
+
     printf("ImportKeyWithISK_RSA: %s\n", SDF_GetErrorString(ret));
 cleanup:
-    if(pucKey) free(pucKey);
+    // if(pucKey) free(pucKey);
     if(hSession){ CloseSession(hSession);} 
     if(hDevice){ CloseDevice(hDevice);} 
     return ret;
@@ -627,27 +635,40 @@ int Test_GenerateKeyWithECC(){
     // 本函数由协商的发起方在获得响应方的协商参数后调用
     // 会话密钥计算完成后，协商句柄被销毁
     // 为协商句柄分配的内存资源也被释放
-    int ret = -1;
-    void *hDevice = NULL;
-    void *hSession = NULL;
-    unsigned char *ResponseID = NULL;
-    unsigned int ResponseIDLength = 16;
-    ECCrefPublicKey *pucResponsePublicKey = NULL;
-    ECCrefPublicKey *pucResponseTmpPublicKey = NULL;
-    void *hAgreementHandle = NULL;
-    void *phKeyHandle = NULL;
-    ret = OpenDevice(&hDevice); if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); return ret; }
-    ret = OpenSession(hDevice, &hSession); if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
-    ResponseID = (unsigned char*)malloc(ResponseIDLength);
-    pucResponsePublicKey = (ECCrefPublicKey*)malloc(sizeof(ECCrefPublicKey));
-    pucResponseTmpPublicKey = (ECCrefPublicKey*)malloc(sizeof(ECCrefPublicKey));
-    if(!ResponseID || !pucResponsePublicKey || !pucResponseTmpPublicKey){ printf("malloc failed\n"); ret = -1; goto cleanup; }
-    memset(ResponseID,0xB2,ResponseIDLength);
-    ret = GenerateKeyWithECC(hSession, ResponseID, ResponseIDLength, pucResponsePublicKey, pucResponseTmpPublicKey, hAgreementHandle, &phKeyHandle);
-    printf("GenerateKeyWithECC: %s\n", SDF_GetErrorString(ret));
-cleanup:
-    if(pucResponsePublicKey) free(pucResponsePublicKey); if(pucResponseTmpPublicKey) free(pucResponseTmpPublicKey); if(ResponseID) free(ResponseID);
-    if(hSession){ CloseSession(hSession);} if(hDevice){ CloseDevice(hDevice);} return ret;
+//     int ret = -1;
+//     void *hDevice = NULL;
+//     void *hSession = NULL;
+//     unsigned char *ResponseID = NULL;
+//     unsigned int ResponseIDLength = 16;
+//     ECCrefPublicKey *pucResponsePublicKey = NULL;
+//     ECCrefPublicKey *pucResponseTmpPublicKey = NULL;
+//     void *hAgreementHandle = NULL;
+//     void *phKeyHandle = NULL;
+//     ret = OpenDevice(&hDevice); if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); return ret; }
+//     ret = OpenSession(hDevice, &hSession); if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+//     ResponseID = (unsigned char*)malloc(ResponseIDLength);
+//     pucResponsePublicKey = (ECCrefPublicKey*)malloc(sizeof(ECCrefPublicKey));
+//     pucResponseTmpPublicKey = (ECCrefPublicKey*)malloc(sizeof(ECCrefPublicKey));
+//     if(!ResponseID || !pucResponsePublicKey || !pucResponseTmpPublicKey){ printf("malloc failed\n"); ret = -1; goto cleanup; }
+//     memset(ResponseID,0xB2,ResponseIDLength);
+//     ret = GenerateKeyWithECC(hSession, ResponseID, ResponseIDLength, pucResponsePublicKey, pucResponseTmpPublicKey, hAgreementHandle, &phKeyHandle);
+//     printf("GenerateKeyWithECC: %s\n", SDF_GetErrorString(ret));
+// cleanup:
+//     if(pucResponsePublicKey) free(pucResponsePublicKey); if(pucResponseTmpPublicKey) free(pucResponseTmpPublicKey); if(ResponseID) free(ResponseID);
+//     if(hSession){ CloseSession(hSession);} if(hDevice){ CloseDevice(hDevice);} return ret;
+
+
+        // int rv;
+        // int step = 0;
+        // int i = 1;
+        // int nKeylen,nKeyIndexSrc,nKeyIndexDest=1;
+        // unsigned int puiAlg[20];
+        // int nSelAlg = 1;
+        // int nInlen = 1024, nEnclen, nOutlen;
+        // DEVICEINFO stDeviceInfo;
+        // unsigned char pIv[16],pIndata[MAX_DATA_LENGTH],pEncdata[MAX_DATA_LENGTH],pOutdata[MAX_DATA_LENGTH];
+        // char sPrkAuthCodeSrc[128],sPrkAuthCodeDest[128];
+        return 1;
 }
 int Test_GenerateAgreementDataAndKeyWithECC(){
     // 使用ECC密钥协商算法，使用自身协商句柄和响应方的协商参数计算会话密钥
@@ -700,7 +721,7 @@ int Test_GenerateKeyWithKEK(){
     // #define SGD_SM4_CBC		(SGD_SM4|SGD_CBC)
     // #define SGD_SM4			0x00000400
     // #define SGD_CBC			0x02
-    unsigned int uiAlgID = (0x00000400 | 0x02);
+    unsigned int uiAlgID = SGD_SM4_CBC;
     unsigned int uiKEKIndex = 1;
     // unsigned char *pucKey;
     unsigned int uiKeyBits = 128; // 或256，按需求
@@ -728,7 +749,10 @@ int Test_ImportKeyWithKEK(){
     // #define SGD_SM4_CBC		(SGD_SM4|SGD_CBC)
     // #define SGD_SM4			0x00000400
     // #define SGD_CBC			0x02
-    unsigned int uiAlgID = (0x00000400 | 0x02);
+    // unsigned int uiAlgID = (0x00000400 | 0x02);
+    // 0x00002002 
+    unsigned int uiAlgID = 0x00002002 ;
+
     unsigned int uiKEKIndex = 1;
     // unsigned char *pucKey;
     unsigned int uiKeyBits = 128; // 或256，按需求
@@ -1059,6 +1083,7 @@ int Test_Decrypt(){
     void *hSession = NULL;
     void *hKeyHandle = NULL;
     unsigned int uiAlgID = (0x00000400 | 0x02);
+    // #define SGD_SM4_CBC		(SGD_SM4|SGD_CBC)
     unsigned char *pucIV;
     unsigned char *pucEncData;
     unsigned int uiEncDataLength;
@@ -1148,6 +1173,7 @@ int Test_CalculateMAC(){
     unsigned int uiKEKIndex = 1;
     unsigned int *puiKeyLength = malloc(sizeof(unsigned int));
     uiAlgID = (0x00000400 | 0x02);
+    
     ret = GenerateKeyWithKEK(hSession, 128, uiAlgID, uiKEKIndex, pucKey, puiKeyLength, &hKeyHandle);
     if (ret != SDR_OK)
     {
@@ -2058,13 +2084,13 @@ void Test_all(){
         int ret = testcases[i].func();
         if (ret == SDR_OK){
             pass++;
-            printf("\033[32m[PASS]\033[0m %s\n", testcases[i].name);
+            printf("\033[32m[PASS]\033[0m %s\n\n", testcases[i].name);
         } else if( ret == SDR_NOTSUPPORT){
             notsupport++;
-            printf("\033[33m[FAIL: %s] \033[0m%s\n",SDF_GetErrorString(ret),testcases[i].name);
+            printf("\033[33m[FAIL: %s] \033[0m%s\n\n",SDF_GetErrorString(ret),testcases[i].name);
         }else{
             fail++;
-            printf("\033[31m[FAIL: %s] \033[0m%s\n",SDF_GetErrorString(ret),testcases[i].name);
+            printf("\033[31m[FAIL: %s] \033[0m%s\n\n",SDF_GetErrorString(ret),testcases[i].name);
         }
     }
 }
