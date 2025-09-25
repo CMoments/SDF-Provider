@@ -387,20 +387,20 @@ int Test_ExportEncPublic_RSA(){
     }
     ret = ExportEncPublicKey_RSA(hSession, keyIndex, pubKey);
     debug_printf("导出的RSA加密公钥长度: %d\n",pubKey->bits);
-    printf("模数m(%d bytes):\n", RSAref_MAX_LEN);
+    debug_printf("模数m(%d bytes):\n", RSAref_MAX_LEN);
     for (int i = 0; i < RSAref_MAX_LEN; i++) {
-        if (i % 16 == 0) printf("\n%04x: ", i);
-        printf("%02x ", pubKey->m[i]);
+        if (i % 16 == 0) debug_printf("\n%04x: ", i);
+        debug_printf("%02x ", pubKey->m[i]);
     }
-    printf("\n");
+    debug_printf("\n");
     
     // 打印指数e
-    printf("\n指数e(%d bytes):\n", RSAref_MAX_LEN);
+    debug_printf("\n指数e(%d bytes):\n", RSAref_MAX_LEN);
     for (int i = 0; i < RSAref_MAX_LEN; i++) {
         if (i % 16 == 0) printf("\n%04x: ", i);
-        printf("%02x ", pubKey->e[i]);
+        debug_printf("%02x ", pubKey->e[i]);
     }
-    printf("\n");
+    debug_printf("\n");
     
     printf("ExportEncPublicKey_RSA: %s\n", SDF_GetErrorString(ret));
 cleanup:
