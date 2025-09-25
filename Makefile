@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS= -g
-OBJS=main.o sdf_bind.o sdf_defs.o 
+OBJS=main.o sdf_bind.o sdf_defs.o Cli-function.o
 all: main
 
 main: $(OBJS)

@@ -1,11 +1,11 @@
-#include "testcases.h"
+#include "Cli-function.h"
 #include "sdf_bind.h"
 #include "sdf_defs.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "AlgMark.h"
-// #define DEBUG
+#define DEBUG
 #ifdef DEBUG
     #define debug_printf(...) printf(__VA_ARGS__)
 #else
@@ -645,6 +645,16 @@ int Test_ExportSignPublicKey_ECC(){
     ret = OpenSession(hDevice, &hSession);
     if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
     ret = ExportSignPublicKey_ECC(hSession, KeyIndex, pucPublicKey);
+        for(int i = 0;i < ECCref_MAX_LEN;i ++){
+        if(i % 16 == 0){
+            debug_printf("\n");
+        }
+        debug_printf("%02X ",pucPublicKey->x[i]);
+    }
+    debug_printf("\n");
+    char filename[256];
+    sprintf(filename,"signpubkey_ecc.%d",KeyIndex);
+    FileWrite(filename,"wb+",(unsigned char *)pucPublicKey,sizeof(pucPublicKey));
     printf("ExportSignPublicKey_ECC: %s\n", SDF_GetErrorString(ret));
 cleanup:
     if(hSession){ CloseSession(hSession);} 
@@ -652,12 +662,11 @@ cleanup:
     if(pucPublicKey){ free(pucPublicKey);} 
     return ret;
 }
-int Test_ExportEncPublicKey_ECC(){
+int Test_ExportEncPublicKey_ECC(unsigned int KeyIndex){
     // 导出密码设备内部存储的指定索引位置的ECC加密公钥
     int ret = -1;
     void *hDevice = NULL;
     void *hSession = NULL;
-    unsigned int KeyIndex = 1;
     ECCrefPublicKey *pucPublicKey = (ECCrefPublicKey *)malloc(sizeof(ECCrefPublicKey));
     if(!pucPublicKey){ printf("malloc public key failed\n"); return -1; }
     ret = OpenDevice(&hDevice);
@@ -665,7 +674,20 @@ int Test_ExportEncPublicKey_ECC(){
     ret = OpenSession(hDevice, &hSession);
     if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
     ret = ExportEncPublicKey_ECC(hSession, KeyIndex, pucPublicKey);
-    printf("ExportEncPublicKey_ECC: %s\n", SDF_GetErrorString(ret));
+    if(ret != SDR_OK){ printf("ExportEncPublicKey_ECC failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    debug_printf("ECCrefPublicKey: %d bytes\n",pucPublicKey->bits);
+    for(int i = 0;i < ECCref_MAX_LEN;i ++){
+        if(i % 16 == 0){
+            debug_printf("\n");
+        }
+        debug_printf("%02X ",pucPublicKey->x[i]);
+    }
+    debug_printf("\n");
+    char filename[256];
+    sprintf(filename,"encpubkey_ecc.%d",KeyIndex);
+    FileWrite(filename,"wb+",(unsigned char *)pucPublicKey,sizeof(pucPublicKey));
+    debug_printf("Encpubkey_ecc saved to encpubkey_ecc.%d\n",KeyIndex);
+    // printf("ExportEncPublicKey_ECC: %s\n", SDF_GetErrorString(ret));
 cleanup:
     if(hSession){ CloseSession(hSession);} 
     if(hDevice){ CloseDevice(hDevice);} 
