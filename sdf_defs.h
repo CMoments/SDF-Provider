@@ -233,7 +233,9 @@ typedef struct SM9refEncEnvelopedKey_st{
     // 验证调试类(12)
     typedef int (*SDF_GenerateKeyPair_RSA)(unsigned int uiKeyBits, RSArefPublicKey *pucPublicKey, RSArefPrivateKey *pucPrivateKey);
     typedef int (*SDF_GenerateKeyPair_ECC)(unsigned int uiAlgID, unsigned int uiKeyBits, ECCrefPublicKey *pucPublicKey, ECCrefPrivateKey *pucPrivateKey);
-    typedef int (*SDF_ExternalPrivateKeyOperation_RSA)(RSArefPrivateKey *pucPrivateKey, unsigned char *pucDataInput, unsigned int uiInputLength, unsigned char *pucDataOutput, unsigned int *puiOutputLength);
+    // typedef int (*SDF_ExternalPrivateKeyOperation_RSA)(RSArefPrivateKey *pucPrivateKey, unsigned char *pucDataInput, unsigned int uiInputLength, unsigned char *pucDataOutput, unsigned int *puiOutputLength);
+    // 标准接口没有使用hSession，这里为了兼容三卫信安
+    typedef int (*SDF_ExternalPrivateKeyOperation_RSA)(void *hSession,RSArefPrivateKey *pucPrivateKey, unsigned char *pucDataInput, unsigned int uiInputLength, unsigned char *pucDataOutput, unsigned int *puiOutputLength);
     typedef int (*SDF_ExternalSign_ECC)(unsigned int uiAlgID, ECCrefPrivateKey *pucPrivateKey, unsigned char *pucDataInput, unsigned int uiInputLength, ECCSignature *pucSignature);
     typedef int (*SDF_ExternalDecrypt_ECC)(unsigned int uiAlgID, ECCrefPrivateKey *pucPrivateKey, ECCCipher *pucEncData, unsigned char *pucData, unsigned int *uiDataLength);
     typedef int (*SDF_ExternalSign_SM9)(SM9SignMasterPublicKey *pSignMasterPublicKey, SM9SignUserPrivateKey *pSignUserPrivateKey, unsigned char *pucData, unsigned int uiDataLength, SM9Signature *pSignature);
@@ -252,6 +254,11 @@ typedef struct SM9refEncEnvelopedKey_st{
     typedef int (*SDF_ExternalKeyEncryptInit)(void *hSessionHandle, unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength, unsigned char *pucIV, unsigned int uiIVLength);
     typedef int (*SDF_ExternalKeyDecryptInit)(void *hSessionHandle, unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength, unsigned char *pucIV, unsigned int uiIVLength);
     typedef int (*SDF_ExternalKeyHMACInit)(void *hSessionHandle, unsigned int uiAlgID, unsigned char *pucKey, unsigned int uiKeyLength);
+
+
+// 扩展接口
+    typedef int  (*SDF_InternalEncrypt_ECC)(void *hSessionHandle, unsigned int uiIPKIndex,unsigned int uiAlgID, unsigned char *pucData, unsigned int uiDataLength, ECCCipher *pucEncData);
+    typedef int  (*SDF_InternalDecrypt_ECC)(void *hSessionHandle, unsigned int uiISKIndex,unsigned int uiAlgID, ECCCipher *pucEncData, unsigned char *pucData, unsigned int *puiDataLength);
 
     const char *SDF_GetErrorString(int err);
 

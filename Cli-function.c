@@ -28,14 +28,215 @@ unsigned int FileWrite(char *filename,char *mode, unsigned char *buffer, size_t 
 
     return rwed;
 }
+
+int PrintData(char *itemName, unsigned char *sourceData, unsigned int dataLength, unsigned int rowCount)
+{
+	int i, j;
+	
+	if((sourceData == NULL) || (rowCount == 0) || (dataLength == 0))
+		return -1;
+	
+	if(itemName != NULL)
+		debug_printf("%s[%d]:\n", itemName, dataLength);
+	
+	for(i=0; i<(int)(dataLength/rowCount); i++)
+	{
+		debug_printf("%08x  ",i * rowCount);
+
+		for(j=0; j<(int)rowCount; j++)
+		{
+			debug_printf("%02x ", *(sourceData + i*rowCount + j));
+		}
+
+		debug_printf("\n");
+	}
+
+	if (!(dataLength % rowCount))
+		return 0;
+	
+	debug_printf("%08x  ", (dataLength/rowCount) * rowCount);
+
+	for(j=0; j<(int)(dataLength%rowCount); j++)
+	{
+		debug_printf("%02x ",*(sourceData + (dataLength/rowCount)*rowCount + j));
+	}
+
+	debug_printf("\n");
+
+	return 0;
+}
+// unsigned int FileRead(char *filename, char *mode, unsigned char *buffer, size_t size)
+// {
+// 	FILE *fp;
+// 	unsigned int rw, rwed;
+
+// 	if((fp = fopen(filename, mode)) == NULL)
+// 	{
+// 		return 0;
+// 	}
+
+// 	rwed = 0;
+
+// 	while((!feof(fp)) && (size > rwed))
+// 	{
+// 		if((rw = (unsigned int)fread(buffer + rwed, 1, size - rwed, fp)) <= 0)
+// 		{
+// 			break;
+// 		}
+
+// 		rwed += rw;
+// 	}
+
+// 	fclose(fp);
+
+// 	return rwed;
+// }
+unsigned int FileRead(char *filename, char *mode, unsigned char *buffer, size_t size)
+{
+	FILE *fp;
+	unsigned int rw, rwed;
+
+	if((fp = fopen(filename, mode)) == NULL)
+	{
+		return 0;
+	}
+
+	rwed = 0;
+
+	while((!feof(fp)) && (size > rwed))
+	{
+		if((rw = (unsigned int)fread(buffer + rwed, 1, size - rwed, fp)) <= 0)
+		{
+			break;
+		}
+
+		rwed += rw;
+	}
+
+	fclose(fp);
+
+	return rwed;
+}
+void PrintRSAPublicKey(RSArefPublicKey* pubKey){
+    /*
+    typedef struct RSArefPublicKey_st{
+    unsigned int bits;
+    unsigned char m[RSAref_MAX_LEN];
+    unsigned char e[RSAref_MAX_LEN];
+    } RSArefPublicKey;
+*/
+    debug_printf("导出的RSA加密公钥长度: %d\n",pubKey->bits);
+    debug_printf("模数m(%d bytes):\n", RSAref_MAX_LEN);
+    for (int i = 0; i < RSAref_MAX_LEN; i++) {
+        if (i % 16 == 0) debug_printf("\n%04x: ", i);
+        debug_printf("%02X ", pubKey->m[i]);
+    }
+    debug_printf("\n");
+    
+    // 打印指数e
+    debug_printf("\n指数e(%d bytes):\n", RSAref_MAX_LEN);
+    for (int i = 0; i < RSAref_MAX_LEN; i++) {
+        if (i % 16 == 0) debug_printf("\n%04x: ", i);
+        debug_printf("%02X ", pubKey->e[i]);
+    }
+    debug_printf("\n");
+}
+void PrintRSAPrivateKey(RSArefPrivateKey* priKey){
+    /*
+        typedef struct RSArefPrivateKey_st{
+            unsigned int bits;
+            unsigned char m[RSAref_MAX_LEN];
+            unsigned char e[RSAref_MAX_LEN];
+            unsigned char d[RSAref_MAX_LEN];
+            unsigned char prime[2][RSAref_MAX_PLEN];
+            unsigned char pexp[2][RSAref_MAX_PLEN];
+            unsigned char coef[RSAref_MAX_PLEN];
+        } RSArefPrivateKey;
+    */
+   debug_printf("模数m(%d bytes):\n",RSAref_MAX_LEN);
+   for (int i = 0;i < RSAref_MAX_LEN;i ++){
+        if(i % 16 == 0)debug_printf("\n%04x: ",i);
+        debug_printf("%02X ",priKey->m[i]);
+   }
+   debug_printf("\n");
+   debug_printf("公钥指数e(%d bytes):\n",RSAref_MAX_LEN);
+   for(int i = 0;i < RSAref_MAX_LEN;i ++){
+        if(i % 16 == 0)debug_printf("\n%04x: ",i);
+        debug_printf("%02X ",priKey->e[i]);
+   }
+   debug_printf("\n");
+   debug_printf("私钥指数d(%d bytes):\n",RSAref_MAX_LEN);
+   for(int i = 0;i < RSAref_MAX_LEN;i ++){
+        if(i % 16 == 0)debug_printf("\n%04x: ",i);
+        debug_printf("%02X ",priKey->d[i]);
+   }
+   debug_printf("\n");
+    debug_printf("质数:\n");
+    for (int i = 0; i < 2; i++) {
+        debug_printf("prime[%d]: ", i);
+        for (size_t j = 0; j < RSAref_MAX_PLEN; j++) {
+        if(j % 16 == 0)debug_printf("\n%04x: ",j);
+
+            debug_printf("%02X ", priKey->prime[i][j]);
+        }
+        debug_printf("\n");
+    }
+    
+    debug_printf("中国剩余定理指数 d mod (p-1), d mod (q-1)\n");
+    for (int i = 0; i < 2; i++) {
+        debug_printf("pexp[%d]: ", i);
+        for (size_t j = 0; j < RSAref_MAX_PLEN; j++) {
+            if(j % 16 == 0)debug_printf("\n%04x: ",j);
+            debug_printf("%02X ", priKey->pexp[i][j]);
+        }
+        debug_printf("\n");
+    }
+    debug_printf("CRT系数 q^-1 mod p\n");
+    for (size_t j = 0; j < RSAref_MAX_PLEN; j++) {
+        if(j % 16 == 0)debug_printf("\n%04x: ",j);
+        debug_printf("%02X ", priKey->coef[j]);
+    }
+    debug_printf("\n");
+}
+void PrintECCPublicKey(ECCrefPublicKey *pucPublicKey){
+    /*
+    typedef struct ECCrefPublicKey_st{
+        unsigned int bits;
+        unsigned char x[ECCref_MAX_LEN];
+        unsigned char y[ECCref_MAX_LEN];
+    } ECCrefPublicKey;
+    */
+
+    debug_printf("=== SM2公钥结构 ===\n");
+    debug_printf("导出的SM2加密公钥长度: %d\n",pucPublicKey->bits);
+
+    debug_printf("椭圆曲线点X坐标\n");
+    for(int i = 0;i < ECCref_MAX_LEN;i ++){
+        if(i % 16 == 0){
+            debug_printf("\n");
+        }
+        debug_printf("%02X ",pucPublicKey->x[i]);
+    }
+    debug_printf("\n");
+    debug_printf("椭圆曲线点Y坐标\n");
+    for(int i = 0;i < ECCref_MAX_LEN;i ++){
+        if(i % 16 == 0){
+            debug_printf("\n");
+        }
+    debug_printf("%02X ",pucPublicKey->y[i]);
+    }
+    debug_printf("\n");
+
+}
+
 void PrintECCCipher_Smart(ECCCipher* cipher) {
     if (!cipher) {
-        printf("ECCCipher is NULL\n");
+        debug_printf("ECCCipher is NULL\n");
         return;
     }
     
-    printf("=== SM2密文结构 ===\n");
-    printf("密文数据长度 L: %u bytes\n\n", cipher->L);
+    debug_printf("=== SM2密文结构 ===\n");
+    debug_printf("密文数据长度 L: %u bytes\n\n", cipher->L);
     
     // 找到X坐标的实际有效长度
     int x_actual_len = 0;
@@ -46,13 +247,13 @@ void PrintECCCipher_Smart(ECCCipher* cipher) {
         }
     }
     
-    printf("椭圆曲线点X坐标 (实际长度: %d bytes):\n", x_actual_len);
+    debug_printf("椭圆曲线点X坐标 (实际长度: %d bytes):\n", x_actual_len);
     int x_start = ECCref_MAX_LEN - x_actual_len;
     for (int i = x_start; i < ECCref_MAX_LEN; i++) {
-        if ((i - x_start) % 16 == 0 && (i - x_start) != 0) printf("\n");
-        printf("%02x ", cipher->x[i]);
+        if ((i - x_start) % 16 == 0 && (i - x_start) != 0) debug_printf("\n");
+        debug_printf("%02x ", cipher->x[i]);
     }
-    printf("\n");
+    debug_printf("\n");
     
     // 找到Y坐标的实际有效长度
     int y_actual_len = 0;
@@ -63,35 +264,35 @@ void PrintECCCipher_Smart(ECCCipher* cipher) {
         }
     }
     
-    printf("\n椭圆曲线点Y坐标 (实际长度: %d bytes):\n", y_actual_len);
+    debug_printf("\n椭圆曲线点Y坐标 (实际长度: %d bytes):\n", y_actual_len);
     int y_start = ECCref_MAX_LEN - y_actual_len;
     for (int i = y_start; i < ECCref_MAX_LEN; i++) {
-        if ((i - y_start) % 16 == 0 && (i - y_start) != 0) printf("\n");
-        printf("%02x ", cipher->y[i]);
+        if ((i - y_start) % 16 == 0 && (i - y_start) != 0) debug_printf("\n");
+        debug_printf("%02x ", cipher->y[i]);
     }
-    printf("\n");
+    debug_printf("\n");
     
     // 打印哈希M（固定32字节）
-    printf("\n哈希值M (32 bytes):\n");
+    debug_printf("\n哈希值M (32 bytes):\n");
     for (int i = 0; i < 32; i++) {
-        if (i % 16 == 0) printf("\n");
-        printf("%02x ", cipher->M[i]);
+        if (i % 16 == 0) debug_printf("\n");
+        debug_printf("%02x ", cipher->M[i]);
     }
-    printf("\n");
+    debug_printf("\n");
     
     // 打印密文数据C - 关键部分！
-    printf("\n密文数据C (长度: %u bytes):\n", cipher->L);
+    debug_printf("\n密文数据C (长度: %u bytes):\n", cipher->L);
     if (cipher->L > 0) {
         // 使用指针访问柔性数组
         unsigned char* c_ptr = cipher->C;
         for (unsigned int i = 0; i < cipher->L; i++) {
-            if (i % 16 == 0) printf("\n%04x: ", i);
-            printf("%02x ", c_ptr[i]);
+            if (i % 16 == 0) debug_printf("\n%04x: ", i);
+            debug_printf("%02x ", c_ptr[i]);
         }
     } else {
-        printf("无密文数据\n");
+        debug_printf("无密文数据\n");
     }
-    printf("\n");
+    debug_printf("\n");
 }
 testcase_t testcases[] = {
     {"Test_Device", Test_Device},
@@ -333,11 +534,115 @@ cleanup:
     }
     return ret;
 }
-int Test_ExportSignPublicKey_RSA(){
+
+
+
+
+
+
+
+
+
+
+
+
+void ExtRSAOptTest()
+{
+	unsigned int rv;
+    void *hDevice = NULL;
+    void *hSession = NULL;
+	RSArefPublicKey pubKey;
+	RSArefPrivateKey priKey;
+	unsigned char inData[512], outData[512], tmpData[512];
+	unsigned int tmpLen;
+	int pukLen, prkLen;
+
+
+	prkLen = FileRead("prikey.0", "rb", (unsigned char *)&priKey, sizeof(priKey));
+	if(prkLen < sizeof(RSArefPrivateKey))
+	{
+		printf("读私钥文件错误。\n");
+	}
+	else
+	{
+		printf("从文件中读取私钥成功。\n");
+        PrintRSAPrivateKey(&priKey);
+	}
+
+	pukLen = FileRead("pubkey.0", "rb", (unsigned char *)&pubKey, sizeof(pubKey));
+	if(pukLen < sizeof(RSArefPublicKey))
+	{
+		printf("读公钥文件错误。\n");
+	}
+	else
+	{
+		printf("从文件中读取公钥成功。\n");
+        PrintRSAPublicKey(&pubKey);
+	}
+
+	inData[0] = 0;
+    OpenDevice(&hDevice);
+    OpenSession(hDevice,&hSession);
+	rv = GenerateRandom(hSession, priKey.bits / 8 - 1, &inData[1]);
+	if(rv != SDR_OK)
+	{
+		printf("产生随机加密数据错误，错误码[0x%08x]\n", rv);
+		printf("\n按任意键继续...");
+
+	}
+	else
+	{
+		printf("从产生随机加密数据成功。\n");
+
+		PrintData("随机加密数据", inData, priKey.bits / 8, 16);
+	}
+
+	rv = ExternalPrivateKeyOperation_RSA(hSession,&priKey, inData, priKey.bits / 8, tmpData, &tmpLen);
+
+	if(rv != SDR_OK)
+	{
+		printf("私钥运算错误，错误码[0x%08x]\n", rv);
+        printf("Error String: %s\n",SDF_GetErrorString(rv));
+	}
+	else
+	{
+		printf("私钥运算成功。\n");
+
+		PrintData("私钥运算结果", tmpData, tmpLen, 16);
+	}
+
+	rv = ExternalPublicKeyOperation_RSA(hSession, &pubKey, tmpData, tmpLen, outData, &tmpLen);
+	if(rv != SDR_OK)
+	{
+		printf("公钥运算错误，错误码[0x%08x]\n", rv);
+        printf("Error String: %s\n",SDF_GetErrorString(rv));
+
+	}
+	else
+	{
+		printf("公钥运算成功。\n");
+
+		PrintData("公钥运算结果", outData, tmpLen, 16);
+	}
+
+	if((priKey.bits / 8 == tmpLen) && (memcmp(inData, outData, priKey.bits / 8) == 0))
+	{
+		printf("结果比较成功。\n");
+	}
+	else
+	{
+		printf("结果比较失败。\n");
+	}
+}
+
+
+
+
+int Test_ExportSignPublicKey_RSA(unsigned int KeyIndex){
     int ret = -1;
     void *hDevice = NULL;
     void *hSession = NULL;
-    unsigned int keyIndex = 1;
+    // unsigned int keyIndex = 1;
     RSArefPublicKey* pubKey = NULL;
     pubKey = (RSArefPublicKey*)malloc(sizeof(RSArefPublicKey));
     if(!pubKey){
@@ -355,19 +660,30 @@ int Test_ExportSignPublicKey_RSA(){
         printf("OpenSession failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
     }
-    ret = ExportSignPublicKey_RSA(hSession, keyIndex, pubKey);
-    printf("ExportSignPublicKey_RSA: %s\n", SDF_GetErrorString(ret));
+    ret = ExportSignPublicKey_RSA(hSession, KeyIndex, pubKey);
+    if(ret != SDR_OK){
+        printf("ExportSignPublicKey_RSA failed: %s\n", SDF_GetErrorString(ret));
+        goto cleanup;
+    }
+    // printf("ExportSignPublicKey_RSA: %s\n", SDF_GetErrorString(ret));
+
+    PrintRSAPublicKey(pubKey);
+
+    char filename[256];
+    sprintf(filename,"signpubkey_rsa.%d",KeyIndex);
+    FileWrite(filename,"wb+",(unsigned char *)pubKey,sizeof(pubKey));
+    debug_printf("Encpubkey_rsa saved to signpubkey_rsa.%d\n",KeyIndex);
 cleanup:
     if(hSession){ CloseSession(hSession);} 
     if(hDevice){ CloseDevice(hDevice);} 
     if(pubKey){ free(pubKey);} 
     return ret;
 }
-int Test_ExportEncPublic_RSA(){
+int Test_ExportEncPublic_RSA(unsigned int KeyIndex){
     int ret = -1;
     void* hDevice = NULL;
     void* hSession = NULL;
-    unsigned int keyIndex = 1;
+    // unsigned int keyIndex = 1;
     RSArefPublicKey* pubKey = (RSArefPublicKey*)malloc(sizeof(RSArefPublicKey));
     if(!pubKey){
         printf("malloc pubKey failed\n");
@@ -385,31 +701,24 @@ int Test_ExportEncPublic_RSA(){
         printf("OpenSession failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
     }
-    ret = ExportEncPublicKey_RSA(hSession, keyIndex, pubKey);
-    debug_printf("导出的RSA加密公钥长度: %d\n",pubKey->bits);
-    debug_printf("模数m(%d bytes):\n", RSAref_MAX_LEN);
-    for (int i = 0; i < RSAref_MAX_LEN; i++) {
-        if (i % 16 == 0) debug_printf("\n%04x: ", i);
-        debug_printf("%02x ", pubKey->m[i]);
+    ret = ExportEncPublicKey_RSA(hSession, KeyIndex, pubKey);
+    if(ret != SDR_OK){
+        printf("ExportEncPublicKey_RSA failed: %s\n", SDF_GetErrorString(ret));
+        goto cleanup;
     }
-    debug_printf("\n");
-    
-    // 打印指数e
-    debug_printf("\n指数e(%d bytes):\n", RSAref_MAX_LEN);
-    for (int i = 0; i < RSAref_MAX_LEN; i++) {
-        if (i % 16 == 0) printf("\n%04x: ", i);
-        debug_printf("%02x ", pubKey->e[i]);
-    }
-    debug_printf("\n");
-    
-    printf("ExportEncPublicKey_RSA: %s\n", SDF_GetErrorString(ret));
+    PrintRSAPublicKey(pubKey);
+    char filename[256];
+    sprintf(filename,"encpubkey_rsa.%d",KeyIndex);
+    FileWrite(filename,"wb+",(unsigned char *)pubKey,sizeof(pubKey));
+    debug_printf("Encpubkey_rsa saved to encpubkey_rsa.%d\n",KeyIndex);
+    // printf("ExportEncPublicKey_RSA: %s\n", SDF_GetErrorString(ret));
 cleanup:
     if(hSession){ CloseSession(hSession);} 
     if(hDevice){ CloseDevice(hDevice);} 
     if(pubKey){ free(pubKey);} 
     return ret;
 }
-int Test_GenerateKeyWithIPK_RSA(){
+int Test_GenerateKeyWithIPK_RSA(unsigned int KeyIndex){
     // 生成会话密钥并用内部RSA公钥加密输出
     // 应用场景：同一台加密机（HSM/SDF设备）上运行多个业务应用或进程，
     //          这些应用需要相互安全传递会话密钥，但密钥不能暴露给设备外部。
@@ -433,7 +742,7 @@ int Test_GenerateKeyWithIPK_RSA(){
     void *hSession = NULL;
     
     // 密码设备存储的密钥对的索引值
-    unsigned int IPKIndex = 1;
+    // unsigned int IPKIndex = 1;
     char *password = "P@ssw0rd";
     unsigned int keyBits = 4096;
     ret = OpenDevice(&hDevice);
@@ -447,7 +756,7 @@ int Test_GenerateKeyWithIPK_RSA(){
         goto cleanup;
     }
 
-    ret = GetPrivateKeyAccessRight(hSession, IPKIndex, (unsigned char *)password, (unsigned int)strlen(password));
+    ret = GetPrivateKeyAccessRight(hSession, KeyIndex, (unsigned char *)password, (unsigned int)strlen(password));
     unsigned int outKeylen;
     void * hKey = NULL;
     // hKey：返回的会话密钥句柄，用于后续使用这个会话密钥
@@ -465,8 +774,9 @@ int Test_GenerateKeyWithIPK_RSA(){
     }
     debug_printf("\n");
     char filename[256];
-    sprintf(filename,"data/keybyisk.%d",IPKIndex);
+    sprintf(filename,"keybyipk_rsa.%d",KeyIndex);
     FileWrite(filename,"wb+",pucKey,outKeylen);
+    debug_printf("SessionKey_byIPK_RSA saved to keybyipk_rsa.%d\n",KeyIndex);
     printf("GenerateKeyWithIPK_RSA: %s\n", SDF_GetErrorString(ret));
 cleanup:
     // if(pucKey) free(pucKey);
@@ -475,7 +785,7 @@ cleanup:
     if(hDevice){ CloseDevice(hDevice);} 
     return ret;
 }
-int Test_GenerateKeyWithEPK_RSA(){
+int Test_GenerateKeyWithEPK_RSA(unsigned int KeyIndex){
     // 生成会话密钥，并用外部RSA公钥加密输出
     // 应用场景：当你需要将会话密钥安全地传递给另一个系统、设备或远程端时，
     //          必须用对方的公钥加密密钥后输出，防止密钥在传输过程中被窃取。
@@ -483,7 +793,7 @@ int Test_GenerateKeyWithEPK_RSA(){
     int ret = -1;
     void* hDevice = NULL;
     void* hSession = NULL;
-    unsigned int keyIndex = 1;
+    // unsigned int KeyIndex = 1;
     unsigned char pucKey[512];
     int nKeylen = 16;
 
@@ -504,14 +814,14 @@ int Test_GenerateKeyWithEPK_RSA(){
         printf("OpenSession failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
     }
-    ret = ExportEncPublicKey_RSA(hSession, keyIndex, pubKey);
+    ret = ExportEncPublicKey_RSA(hSession, KeyIndex, pubKey);
     if (ret != SDR_OK){
 	    printf("导出RSA加密公钥错误，错误码[0x%08x]\n", ret);
     }else{
         int outKeylen = sizeof(pubKey);
         void *phKeyHandle = NULL;
         ret = GenerateKeyWithEPK_RSA(hSession, nKeylen * 8, pubKey, pucKey, &outKeylen, &phKeyHandle);
-        printf("GenerateKeyWithEPK_RSAEx: %s\n",SDF_GetErrorString(ret));
+        printf("GenerateKeyWithEPK_RSA: %s\n",SDF_GetErrorString(ret));
         debug_printf("会话密钥长度：%d bytes\n",outKeylen);
         for (int i = 0;i < outKeylen;i ++){
             if (i % 16 == 0)debug_printf("\n");
@@ -521,10 +831,10 @@ int Test_GenerateKeyWithEPK_RSA(){
 
 
         char filename[128];
-        sprintf(filename, "data/keybyisk.%d", keyIndex);
+        sprintf(filename, "keybyepk_rsa.%d", KeyIndex);
         FileWrite(filename, "wb+", pucKey, outKeylen);
 
-        printf("会话密钥密文已经写入文件：%s。\n", filename);
+        printf("SessionKey_byEPK_RSA saved to %s\n", filename);
         // PrintData(filename, pucKey, outKeylen, 16);
     }
     // if (nSel == menu_EPK_RSA)
@@ -562,7 +872,7 @@ cleanup:
     // if(pubKeyLength){ free(pubKeyLength);} 
     return ret;
 }
-int Test_ImportKeyWithISK_RSA(){
+int Test_ImportKeyWithISK_RSA(unsigned int KeyIndex){
     // 导入会话密钥并用内部RSA私钥解密
     // chord to GenerateKeyWithEPK_RSA
     int ret = -1;
@@ -579,21 +889,11 @@ int Test_ImportKeyWithISK_RSA(){
         goto cleanup;
     }
 
-    // 密码设备存储的密钥对的索引值
-    unsigned int ISKIndex = 1;
 
-    // 缓冲区指针，用于存放输入的密钥密文
-    // unsigned char *pucKey = NULL;
     void * phKeyHandle = NULL;
-    GetPrivateKeyAccessRight(hSession, ISKIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
-    // 由于GenerateKeyWithEPK_RSA未被softsdf实现
-    // unsigned char *pucKey;
-    // pucKey = (unsigned char *)malloc(1024);
-    // GenerateKeyWithEPK_RSA(hSession, ISKIndex, (unsigned char *)"P@ssw0rd",(unsigned int)strlen("P@ssw0rd"))
-    // pucKey = (unsigned char*)malloc(256); if(!pucKey){ printf("malloc failed\n"); ret = -1; goto cleanup; }
-    // memset(pucKey,0,256); puiKeyLength = 24;
-
-    // ret = GenerateKeyWithEPK_RSA(hSession,uiKeybits,puckey,pubkey,puikeylength,phKeyHandle);
+    GetPrivateKeyAccessRight(hSession, KeyIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
+    
+    
     int nKeylen = 16;
     int keyindex = 1;
     RSArefPublicKey *pubkey = malloc(sizeof(RSArefPublicKey));
@@ -602,24 +902,33 @@ int Test_ImportKeyWithISK_RSA(){
     unsigned char pucKey[512];
     memset(pucKey,0,sizeof(pucKey));
 
-    unsigned int outKeylen;
-    outKeylen = sizeof(pucKey);
-
-    ret = GenerateKeyWithEPK_RSA(hSession, nKeylen * 8, pubkey, pucKey, &outKeylen, &phKeyHandle);
-    if (ret != SDR_OK){
-        printf("GenerateKeyWithEPK_RSA: %s\n",SDF_GetErrorString(ret));
-    }
+    unsigned int outKeyLength;
+    // outKeylen = sizeof(pucKey);
+    outKeyLength = 128;
+    char filename[256];
+    sprintf(filename,"keybyepk_rsa.%d",KeyIndex);
+    unsigned int prkLen = FileRead(filename, "rb", (unsigned char *)&pucKey, sizeof(pucKey));
+	if(prkLen < sizeof(outKeyLength))
+	{
+        printf("Cannot find %s\n",filename);
+        printf("Please GenerateKeywithEPK_RSA first\n");
+		goto cleanup;
+	}
+	else
+	{
+		printf("Read %s OK\n",filename);
+	}
     // ExportEncPublicKey_RSA(hSession, KeyIndex, pucPublicKey);
     // GenerateKeyWithEPK_RSA(hSession, KeyBits, AlgID, pucPublicKey, pucKey, &phKeyHandle);
     // ret = ImportKeyWithISK_RSA(hSession, ISKIndex ,pucKey ,KeyLength, phKeyHandle);
     // phKeyHandle = NULL;
-    debug_printf("会话密钥长度：%d bytes\n",outKeylen);
-    for(int i = 0;i < outKeylen;i ++){
+    debug_printf("会话密钥长度：%d bytes\n",outKeyLength);
+    for(int i = 0;i < outKeyLength;i ++){
         if (i % 16 == 0)debug_printf("\n");
         debug_printf("%02X ",pucKey[i]);
     }
     debug_printf("\n");
-	ret = ImportKeyWithISK_RSA(hSession, ISKIndex, pucKey, outKeylen, &phKeyHandle);
+	ret = ImportKeyWithISK_RSA(hSession, KeyIndex, pucKey, outKeyLength, &phKeyHandle);
 
     printf("ImportKeyWithISK_RSA: %s\n", SDF_GetErrorString(ret));
 cleanup:
@@ -628,12 +937,12 @@ cleanup:
     if(hDevice){ CloseDevice(hDevice);} 
     return ret;
 }
-int Test_ExportSignPublicKey_ECC(){
+int Test_ExportSignPublicKey_ECC(unsigned int KeyIndex){
     // 导出密码设备内部存储的指定索引位置的ECC签名公钥
     int ret = -1;
     void *hDevice = NULL;
     void *hSession = NULL;
-    unsigned int KeyIndex = 1;
+    // unsigned int KeyIndex = 1;
     ECCrefPublicKey *pucPublicKey = NULL;
     pucPublicKey = (ECCrefPublicKey *)malloc(sizeof(ECCrefPublicKey));
     if(!pucPublicKey){
@@ -645,16 +954,11 @@ int Test_ExportSignPublicKey_ECC(){
     ret = OpenSession(hDevice, &hSession);
     if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
     ret = ExportSignPublicKey_ECC(hSession, KeyIndex, pucPublicKey);
-        for(int i = 0;i < ECCref_MAX_LEN;i ++){
-        if(i % 16 == 0){
-            debug_printf("\n");
-        }
-        debug_printf("%02X ",pucPublicKey->x[i]);
-    }
-    debug_printf("\n");
+    PrintECCPublicKey(pucPublicKey);
     char filename[256];
     sprintf(filename,"signpubkey_ecc.%d",KeyIndex);
     FileWrite(filename,"wb+",(unsigned char *)pucPublicKey,sizeof(pucPublicKey));
+    debug_printf("Signpubkey_ecc saved to encpubkey_ecc.%d\n",KeyIndex);
     printf("ExportSignPublicKey_ECC: %s\n", SDF_GetErrorString(ret));
 cleanup:
     if(hSession){ CloseSession(hSession);} 
@@ -675,14 +979,7 @@ int Test_ExportEncPublicKey_ECC(unsigned int KeyIndex){
     if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
     ret = ExportEncPublicKey_ECC(hSession, KeyIndex, pucPublicKey);
     if(ret != SDR_OK){ printf("ExportEncPublicKey_ECC failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
-    debug_printf("ECCrefPublicKey: %d bytes\n",pucPublicKey->bits);
-    for(int i = 0;i < ECCref_MAX_LEN;i ++){
-        if(i % 16 == 0){
-            debug_printf("\n");
-        }
-        debug_printf("%02X ",pucPublicKey->x[i]);
-    }
-    debug_printf("\n");
+    PrintECCPublicKey(pucPublicKey);
     char filename[256];
     sprintf(filename,"encpubkey_ecc.%d",KeyIndex);
     FileWrite(filename,"wb+",(unsigned char *)pucPublicKey,sizeof(pucPublicKey));
@@ -694,12 +991,12 @@ cleanup:
     if(pucPublicKey){ free(pucPublicKey);} 
     return ret;
 }
-int Test_GenerateKeyWithIPK_ECC() {
+int Test_GenerateKeyWithIPK_ECC(unsigned int KeyIndex) {
     // 生成会话密钥并用内部ECC私钥加密输出
     int ret = 1;
     void *hDevice = NULL;
     void *hSession = NULL;
-    int nKeyIndex = 3;
+    // int nKeyIndex = 3;
     int nKeylen = 24; // 生成 192 位的会话密钥
     void * phKeyHandle = NULL; // 会话密钥句柄
     unsigned char ECC_pucKey[512] = {0}; // 缓冲区，用于存储加密的会话密钥
@@ -717,23 +1014,22 @@ int Test_GenerateKeyWithIPK_ECC() {
         goto cleanup;
     }
 
-    ret = GetPrivateKeyAccessRight(hSession, nKeyIndex, passwd, (unsigned int)strlen(passwd));
+    ret = GetPrivateKeyAccessRight(hSession, KeyIndex, passwd, (unsigned int)strlen(passwd));
     if (ret != SDR_OK) {
         printf("GetPrivateKeyAccessRight failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
     }
 
-    ret = GenerateKeyWithIPK_ECC(hSession, nKeyIndex, nKeylen * 8, (ECCCipher *)ECC_pucKey, &phKeyHandle);
+    ret = GenerateKeyWithIPK_ECC(hSession, KeyIndex, nKeylen * 8, (ECCCipher *)ECC_pucKey, &phKeyHandle);
     if (ret != SDR_OK) {
         printf("GenerateKeyWithIPK_ECC failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
     }
     PrintECCCipher_Smart((ECCCipher*)ECC_pucKey);
-
     char filename[256];
-	sprintf(filename, "data/keybyisk_ecc.%d", nKeyIndex);
+	sprintf(filename, "keybyipk_ecc.%d", KeyIndex);
 	FileWrite(filename, "wb+", ECC_pucKey, sizeof(ECCCipher));
-
+    printf("SessionKey_byIPK_ECC saved to %s\n",filename);
     printf("GenerateKeyWithIPK_ECC: %s\n",SDF_GetErrorString(ret));
 
 cleanup:
@@ -846,7 +1142,7 @@ cleanup:
 //     }
 //     return ret;
 // }
-int Test_GenerateKeyWithEPK_ECC(){
+int Test_GenerateKeyWithEPK_ECC(unsigned int KeyIndex){
     int ret = -1;
     void *hDevice = NULL;
     void *hSession = NULL;
@@ -854,7 +1150,7 @@ int Test_GenerateKeyWithEPK_ECC(){
     ECCrefPublicKey *pucPublicKey = NULL;
     ECCCipher *pucKey = NULL;
     void *phKeyHandle = NULL;
-    unsigned int nKeylen = 24;  // 192位会话密钥
+    unsigned int nKeylen = 16;  // 192位会话密钥
     
     ret = OpenDevice(&hDevice);
     if(ret != SDR_OK){ 
@@ -868,7 +1164,6 @@ int Test_GenerateKeyWithEPK_ECC(){
         goto cleanup; 
     }
     
-    // 1. 分配公钥内存
     pucPublicKey = (ECCrefPublicKey *)malloc(sizeof(ECCrefPublicKey));
     if (!pucPublicKey) {
         printf("malloc pucPublicKey failed\n");
@@ -877,8 +1172,6 @@ int Test_GenerateKeyWithEPK_ECC(){
     }
     memset(pucPublicKey, 0, sizeof(ECCrefPublicKey));
     
-    // 2. 分配足够的密文内存（关键修复！）
-    // ECCCipher包含柔性数组，需要预估最大长度
     size_t max_cipher_len = sizeof(ECCCipher) + 256;  // 预留256字节给C字段
     pucKey = (ECCCipher *)malloc(max_cipher_len);
     if (!pucKey) {
@@ -888,44 +1181,27 @@ int Test_GenerateKeyWithEPK_ECC(){
     }
     memset(pucKey, 0, max_cipher_len);
     
-    // 3. 导出公钥
-    unsigned int KeyIndex = 1;
     ret = ExportEncPublicKey_ECC(hSession, KeyIndex, pucPublicKey);
     if (ret != SDR_OK) {
         printf("ExportEncPublicKey_ECC failed: %s\n", SDF_GetErrorString(ret));
         goto cleanup;
     }
     
-    // 4. 生成密钥
     ret = GenerateKeyWithEPK_ECC(hSession, nKeylen * 8, uiAlgID, pucPublicKey, pucKey, &phKeyHandle);
     printf("GenerateKeyWithEPK_ECC: %s\n", SDF_GetErrorString(ret));
     
     if (ret == SDR_OK) {
-        // 5. 打印密文信息
         PrintECCCipher_Smart(pucKey);
         
-        // 6. 正确计算要写入的数据大小（关键修复！）
-        // ECCCipher的实际大小 = 固定部分 + 可变部分
-        size_t actual_cipher_size = sizeof(ECCCipher) - sizeof(unsigned char) + pucKey->L;
-        
-        printf("要写入的文件大小: %zu bytes\n", actual_cipher_size);
-        printf("其中固定部分: %zu bytes, 可变部分: %u bytes\n", 
-               sizeof(ECCCipher) - sizeof(unsigned char), pucKey->L);
-        
-        // 7. 写入文件
         char filename[128];
-        sprintf(filename, "data/keybyisk_ecc.%d", KeyIndex);
-        
-        // 安全写入：先写固定部分，再写可变部分
+        sprintf(filename, "keybyepk_ecc.%d", KeyIndex);
         FILE* fp = fopen(filename, "wb");
         if (fp) {
-            // 写入固定部分（不包括C字段）
             size_t fixed_size = sizeof(ECCCipher) - sizeof(unsigned char);
             if (fwrite(pucKey, 1, fixed_size, fp) != fixed_size) {
                 printf("写入固定部分失败\n");
             }
             
-            // 写入可变部分（C字段数据）
             if (pucKey->L > 0) {
                 if (fwrite(pucKey->C, 1, pucKey->L, fp) != pucKey->L) {
                     printf("写入可变部分失败\n");
@@ -938,10 +1214,13 @@ int Test_GenerateKeyWithEPK_ECC(){
             printf("无法创建文件: %s\n", filename);
         }
         
-        // 8. 验证密钥句柄
-        if (phKeyHandle) {
-            printf("生成的密钥句柄: %p\n", phKeyHandle);
-            // 这里可以使用phKeyHandle进行加密操作测试
+        // 打印文件大小
+        FILE* fp_check = fopen(filename, "rb");
+        if (fp_check) {
+            fseek(fp_check, 0, SEEK_END);
+            long file_size = ftell(fp_check);
+            printf("文件大小: %ld bytes\n", file_size);
+            fclose(fp_check);
         }
     }
 
@@ -965,42 +1244,100 @@ cleanup:
     }
     return ret;
 }
-int Test_ImportKeyWithISK_ECC(){
-    // 导入会话密钥并用内部ECC加密私钥进行解密，同时返回密钥句柄
 
+int Test_ImportKeyWithISK_ECC(unsigned int KeyIndex){
     int ret = SDR_OK;
-//     void *hDevice = NULL;
-//     void *hSession = NULL;
-//     unsigned int ISKIndex = 1;
-//     unsigned int KeyIndex = 1;
-//     char *password = "P@ssw0rd";
-//     void *phKeyHandle = NULL;
+    void *hDevice = NULL;
+    void *hSession = NULL;
+    char *password = "P@ssw0rd";
+    void *phKeyHandle = NULL;
 
-//     ECCCipher *pucKey = NULL;
-//     pucKey = (ECCCipher *)malloc(sizeof(ECCCipher));
-//     ECCrefPublicKey *pucPublicKey = NULL;
-//     pucPublicKey = (ECCrefPublicKey *)malloc(sizeof(ECCrefPublicKey));
-//     unsigned int AlgID = 0x00020800;
-//     unsigned int KeyBits = 16;
+    unsigned char pucKey[512];
+    unsigned int outKeyLength = 128;
+    unsigned int AlgID = 0x00020800;
 
-//     ret = OpenDevice(&hDevice);
-//     if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
-//     ret = OpenSession(hDevice, &hSession);
-//     if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    ret = OpenDevice(&hDevice);
+    if(ret != SDR_OK){ 
+        printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); 
+        goto cleanup; 
+    }
+    
+    ret = OpenSession(hDevice, &hSession);
+    if(ret != SDR_OK){ 
+        printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); 
+        goto cleanup; 
+    }
+    
+    ret = GetPrivateKeyAccessRight(hSession, KeyIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
+    if(ret != SDR_OK){ 
+        printf("GetPrivateKeyAccessRight failed: %s\n", SDF_GetErrorString(ret)); 
+        goto cleanup; 
+    }
 
-//     // 缓冲区指针，用于存放输入的密钥密文
+    char filename[256];
+    sprintf(filename,"keybyepk_ecc.%d",KeyIndex);
+    unsigned int prkLen = FileRead(filename, "rb", (unsigned char *)&pucKey, sizeof(pucKey));
+    if(prkLen < sizeof(outKeyLength))
+    {
+        printf("Cannot find %s\n",filename);
+        printf("Please GenerateKeywithEPK_ECC first\n");
+        goto cleanup;
+    }
+    else
+    {
+        printf("Read %s OK\n",filename);
+        printf("读取的字节数: %u\n", prkLen);
+    }
 
-//     ExportEncPublicKey_ECC(hSession, KeyIndex, pucPublicKey);
-//     GenerateKeyWithEPK_ECC(hSession, KeyBits, AlgID, pucPublicKey, pucKey, &phKeyHandle);
+    // 动态分配内存以存储整个密文结构
+    ECCCipher *cipher = (ECCCipher *)malloc(sizeof(ECCCipher) + prkLen - sizeof(ECCCipher));
+    if (!cipher) {
+        printf("内存分配失败\n");
+        goto cleanup;
+    }
 
-//     GetPrivateKeyAccessRight(hSession, ISKIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
-//     ret = ImportKeyWithISK_ECC(hSession, ISKIndex, pucKey, &phKeyHandle);
-//     printf("ImportKeyWithISK_ECC: %s\n", SDF_GetErrorString(ret));
-// cleanup:
-//     if(hSession){ CloseSession(hSession);} 
-//     if(hDevice){ CloseDevice(hDevice);} 
-//     if(pucKey){ free(pucKey);} 
-//     if(pucPublicKey){ free(pucPublicKey);} 
+    // 重新读取文件内容到动态分配的内存
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) {
+        printf("无法打开文件: %s\n", filename);
+        free(cipher);
+        goto cleanup;
+    }
+
+    size_t fixed_size = sizeof(ECCCipher) - sizeof(unsigned char);
+    if (fread(cipher, 1, fixed_size, fp) != fixed_size) {
+        printf("读取固定部分失败\n");
+        fclose(fp);
+        free(cipher);
+        goto cleanup;
+    }
+
+    if (cipher->L > 0) {
+        if (fread(cipher->C, 1, cipher->L, fp) != cipher->L) {
+            printf("读取可变部分失败\n");
+            fclose(fp);
+            free(cipher);
+            goto cleanup;
+        }
+    }
+
+    fclose(fp);
+
+    PrintECCCipher_Smart(cipher);
+
+    ret = ImportKeyWithISK_ECC(hSession, KeyIndex, cipher, &phKeyHandle);
+    if(ret != SDR_OK){ 
+        printf("ImportKeyWithISK_ECC failed: %s\n", SDF_GetErrorString(ret)); 
+        goto cleanup; 
+    }
+    printf("ImportKeyWithISK_ECC: %s\n", SDF_GetErrorString(ret));
+
+cleanup:
+    if (cipher) {
+        free(cipher);
+    }
+    if(hSession){ CloseSession(hSession);} 
+    if(hDevice){ CloseDevice(hDevice);} 
     return ret;
 }
 int Test_GenerateAgreementDataWithECC(){
@@ -1116,7 +1453,7 @@ cleanup:
     if(pucSponsorPublicKey) free(pucSponsorPublicKey); if(pucSponsorTmpPublicKey) free(pucSponsorTmpPublicKey); if(pucResponsePublicKey) free(pucResponsePublicKey); if(pucResponseTmpPublicKey) free(pucResponseTmpPublicKey); if(pucResponseID) free(pucResponseID); if(pucSponsorID) free(pucSponsorID);
     if(hSession){ CloseSession(hSession);} if(hDevice){ CloseDevice(hDevice);} return ret;
 }
-int Test_GenerateKeyWithKEK(){
+int Test_GenerateKeyWithKEK(unsigned int KeyIndex){
     // 生成会话密钥并用密钥加密密钥加密输出
     // 同时返回密钥句柄，加密模式为CBC模式
     int ret = -1;
@@ -1130,99 +1467,121 @@ int Test_GenerateKeyWithKEK(){
         ret = OpenDevice(&hDevice); if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
         ret = OpenSession(hDevice, &hSession); if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
  
-        ret = GetDeviceInfo(hSession, &stDeviceInfo);
-        if (ret != SDR_OK)
-        {
-            printf("获取设备信息错误，错误码[0x%08x]\n", ret);
-        }
+        // ret = GetDeviceInfo(hSession, &stDeviceInfo);
+        // if (ret != SDR_OK)
+        // {
+        //     printf("获取设备信息错误，错误码[0x%08x]\n", ret);
+        // }
 
-        int i = 1;
+        // int i = 1;
 
-        if (stDeviceInfo.SymAlgAbility & SGD_SM1_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_SM1_ECB\n\n", i++);
-        }
-        if (stDeviceInfo.SymAlgAbility & SGD_SSF33_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_SSF33_ECB\n\n", i++);
-        }
-        if (stDeviceInfo.SymAlgAbility & SGD_AES_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_AES_ECB\n\n", i++);
-        }
-        if (stDeviceInfo.SymAlgAbility & SGD_DES_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_DES_ECB\n\n", i++);
-        }
-        if (stDeviceInfo.SymAlgAbility & SGD_3DES_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_3DES_ECB\n\n", i++);
-        }
-        if (stDeviceInfo.SymAlgAbility & SGD_SM4_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_SM4_ECB\n\n", i++);
-        }
-        if (stDeviceInfo.SymAlgAbility & SGD_SM7_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_SM7_ECB\n\n", i++);
-        }
-        if (stDeviceInfo.SymAlgAbility & SGD_SM6_ECB & SGD_SYMM_ALG_MASK)
-        {
-            printf("  %d | SGD_SM6_ECB\n\n", i++);
-        }
-        if (!(stDeviceInfo.SymAlgAbility & SGD_SM4_CBC & SGD_SYMM_ALG_MASK))
-        {
-            // printf("  %d | SGD_SM6_ECB\n\n", i++);
-            printf("Not support SM4_CBC\n");
-        }
+        // if (stDeviceInfo.SymAlgAbility & SGD_SM1_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_SM1_ECB\n\n", i++);
+        // }
+        // if (stDeviceInfo.SymAlgAbility & SGD_SSF33_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_SSF33_ECB\n\n", i++);
+        // }
+        // if (stDeviceInfo.SymAlgAbility & SGD_AES_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_AES_ECB\n\n", i++);
+        // }
+        // if (stDeviceInfo.SymAlgAbility & SGD_DES_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_DES_ECB\n\n", i++);
+        // }
+        // if (stDeviceInfo.SymAlgAbility & SGD_3DES_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_3DES_ECB\n\n", i++);
+        // }
+        // if (stDeviceInfo.SymAlgAbility & SGD_SM4_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_SM4_ECB\n\n", i++);
+        // }
+        // if (stDeviceInfo.SymAlgAbility & SGD_SM7_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_SM7_ECB\n\n", i++);
+        // }
+        // if (stDeviceInfo.SymAlgAbility & SGD_SM6_ECB & SGD_SYMM_ALG_MASK)
+        // {
+        //     printf("  %d | SGD_SM6_ECB\n\n", i++);
+        // }
+
 
     unsigned int uiAlgID = SGD_SM4_ECB;
-    unsigned int uiKEKIndex = 1;
+    // unsigned int uiKEKIndex = 1;
     // unsigned char *pucKey;
-    unsigned int nKeylen = 16; // 或256，按需求
-    unsigned char *pucKey;        // 足够大，通常32~64字节
+    unsigned int nKeylen = 16; 
+    unsigned char *pucKey;        
     unsigned int *puiKeyLength;
     pucKey = (unsigned char *)malloc(64);
     puiKeyLength = (unsigned int *)malloc(sizeof(unsigned int));
     void *phKeyHandle = NULL;
-    GetPrivateKeyAccessRight(hSession,uiKEKIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
-    ret = GenerateKeyWithKEK(hSession, nKeylen * 8, uiAlgID, uiKEKIndex, pucKey, puiKeyLength, &phKeyHandle);
-    printf("GenerateKeyWithKEK: %s\n", SDF_GetErrorString(ret));
+    ret = GetPrivateKeyAccessRight(hSession,KeyIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
+    if(ret != SDR_OK){ printf("GetPrivateKeyAccessRight failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    ret = GenerateKeyWithKEK(hSession, nKeylen * 8, uiAlgID, KeyIndex, pucKey, puiKeyLength, &phKeyHandle);
+    if(ret != SDR_OK){ printf("GenerateKeyWithKEK failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    for(int i = 0;i < (*puiKeyLength);i ++){
+        if(i % 16 == 0)debug_printf("\n");
+        debug_printf("%02X ",pucKey[i]);
+    }
+    debug_printf("\n");
+    
+    char filename[256];
+    sprintf(filename,"keybykek.%d",KeyIndex);
+    FileWrite(filename,"wb+",pucKey,sizeof(pucKey));
+    debug_printf("SessionKey_byKEK saved to keybykek.%d\n",KeyIndex);
+
+    // printf("GenerateKeyWithKEK: %s\n", SDF_GetErrorString(ret));
 cleanup:
     if(hSession){ CloseSession(hSession);} 
     if(hDevice){ CloseDevice(hDevice);} if(pucKey){ free(pucKey);} if(puiKeyLength){ free(puiKeyLength);} return ret;
 }
-int Test_ImportKeyWithKEK(){
+int Test_ImportKeyWithKEK(unsigned int KeyIndex){
     // 导入会话密钥并用加密密钥解密
-    
-
-      // 先用GenerateKeyWithKEK生成会话密钥并用密钥加密密钥加密输出
+    // 先用GenerateKeyWithKEK生成会话密钥并用密钥加密密钥加密输出
     int ret = -1;
     void *hDevice = NULL;
     void *hSession = NULL;
-    // #define SGD_SM4_CBC		(SGD_SM4|SGD_CBC)
-    // #define SGD_SM4			0x00000400
-    // #define SGD_CBC			0x02
-    // unsigned int uiAlgID = (0x00000400 | 0x02);
-    // 0x00002002 
     unsigned int uiAlgID = SGD_SM4_ECB ;
-
-    unsigned int uiKEKIndex = 1;
-    // unsigned char *pucKey;
-    unsigned int nkeylen = 16; // 或256，按需求
-    unsigned char *pucKey;        // 足够大，通常32~64字节
-    unsigned int *puiKeyLength;
-    pucKey = (unsigned char *)malloc(64);
-    puiKeyLength = (unsigned int *)malloc(sizeof(unsigned int));
+    unsigned int nkeylen = 16;
+    unsigned char pucKey[512];
+    unsigned int outKeyLength = 32;
     void *phKeyHandle = NULL;
     ret = OpenDevice(&hDevice); if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
     ret = OpenSession(hDevice, &hSession); if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
-    GetPrivateKeyAccessRight(hSession,uiKEKIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
-    GenerateKeyWithKEK(hSession, nkeylen*8, uiAlgID, uiKEKIndex, pucKey, puiKeyLength, &phKeyHandle);
-    ret = ImportKeyWithKEK(hSession, uiAlgID, uiKEKIndex, pucKey, *puiKeyLength, &phKeyHandle);
+    GetPrivateKeyAccessRight(hSession,KeyIndex, (unsigned char *)"P@ssw0rd", (unsigned int)strlen("P@ssw0rd"));
+    
+    
+    // GenerateKeyWithKEK(hSession, nkeylen*8, uiAlgID, KeyIndex, pucKey, &outKeyLength, &phKeyHandle);
+    char filename[256];
+    sprintf(filename,"keybykek.%d",KeyIndex);
+    unsigned int prkLen = FileRead(filename, "rb", (unsigned char *)&pucKey, sizeof(pucKey));
+	if(prkLen < sizeof(outKeyLength))
+	{
+        printf("Cannot find %s\n",filename);
+        printf("Please GenerateKeywithKEK first\n");
+		goto cleanup;
+	}
+	else
+	{
+		printf("Read %s OK\n",filename);
+	}
+    
+    debug_printf("会话密钥长度：%d bytes\n",outKeyLength);
+    for(int i = 0;i < outKeyLength;i ++){
+        if(i % 16 == 0)debug_printf("\n");
+        debug_printf("%02X ",pucKey[i]);
+    }
+    debug_printf("\n");
+    ret = ImportKeyWithKEK(hSession, uiAlgID, KeyIndex, pucKey, outKeyLength, &phKeyHandle);
     printf("ImportKeyWithKEK: %s\n", SDF_GetErrorString(ret));
 cleanup:
-    if(hSession){ CloseSession(hSession);} if(hDevice){ CloseDevice(hDevice);} if(pucKey){ free(pucKey);} if(puiKeyLength){ free(puiKeyLength);} return ret;
+    if(hSession){ CloseSession(hSession);} 
+    if(hDevice){ CloseDevice(hDevice);} 
+    // if(pucKey){ free(pucKey);}
+    return ret;
 }
 int Test_DestroyKey(){
     int ret = -1;
@@ -1312,6 +1671,319 @@ cleanup:
     if(pucDataInput) free(pucDataInput); if(pucDataOutput) free(pucDataOutput); if(puiOutputLength) free(puiOutputLength);
     if(hSession){ CloseSession(hSession);} if(hDevice){ CloseDevice(hDevice);} return ret;
 }
+void IntRSAOptTest()
+{
+    void *hDevice = NULL;
+    void *hSession = NULL;
+    int ret = -1;
+	int rv, keyIndex;
+    keyIndex = 1;
+	unsigned char inData[512], outData[512], tmpData[512];
+	unsigned int tmpLen, outDataLen, encKeyBits = 0, signKeyBits = 0;
+	char sPrkAuthCode[128];
+	RSArefPublicKey sign_PubKey;
+	RSArefPublicKey enc_PubKey;
+	int step = 0;
+    ret = OpenDevice(&hDevice); if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    ret = OpenSession(hDevice, &hSession); if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    // SGD_RSA_SIGN,
+    ret = ExportSignPublicKey_RSA(hSession, keyIndex, &sign_PubKey);
+			if (ret != SDR_OK)
+			{
+				printf("导出签名公钥错误，错误码[0x%08x]\n", ret);
+			}
+			else
+			{
+				signKeyBits = sign_PubKey.bits;
+
+				printf("导出签名公钥成功。\n");
+			}
+
+			ret = ExportEncPublicKey_RSA(hSession, keyIndex, &enc_PubKey);
+			if (ret != SDR_OK)
+			{
+				printf("导出加密公钥错误，错误码[0x%08x]\n", ret);
+			}
+			else
+			{
+				encKeyBits = enc_PubKey.bits;
+
+				printf("导出加密公钥成功。\n");
+			}
+
+
+	ret = InternalPrivateKeyOperation_RSA(hSession, keyIndex,  inData, signKeyBits / 8, tmpData, &tmpLen);
+    // typedef int (*SDF_InternalPrivateKeyOperation_RSA)(void *hSessionHandle, unsigned int uiKeyIndex, unsigned char *pucDataInput, unsigned int uiInputLength, unsigned char *pucDataOutput, unsigned int *puiOutputLength);
+    if (ret != SDR_OK)
+    {
+        if (strlen(sPrkAuthCode) != 0)
+        {
+            ReleasePrivateKeyAccessRight(hSession, keyIndex);
+        }
+        printf("签名私钥运算错误，错误码[0x%08x]\n", ret);
+        debug_printf("Error String: %s\n",SDF_GetErrorString(ret));
+    }
+    else
+    {
+        printf("签名私钥运算成功。\n");
+        PrintData("私钥运算结果", tmpData, tmpLen, 16);
+    }
+
+            memset(outData, 0, sizeof(outData));
+            outDataLen = sizeof(outData);
+            //  SGD_RSA_SIGN, 
+            ret = InternalPublicKeyOperation_RSA(hSession, keyIndex,tmpData, tmpLen, outData, &outDataLen);
+
+            if (rv != SDR_OK)
+            {
+                if (strlen(sPrkAuthCode) != 0)
+                {
+                    ReleasePrivateKeyAccessRight(hSession, keyIndex);
+                }
+
+                printf("签名公钥运算错误，错误码[0x%08x]\n", rv);
+            }
+            else
+            {
+                printf("签名公钥运算成功。\n");
+
+                PrintData("公钥运算结果", outData, outDataLen, 16);
+            }
+
+            if ((outDataLen != signKeyBits / 8) || (memcmp(inData, outData, outDataLen) != 0))
+            {
+                if (strlen(sPrkAuthCode) != 0)
+                {
+                    ReleasePrivateKeyAccessRight(hSession, keyIndex);
+                }
+
+                printf("签名公钥运算结果与明文数据比较失败。\n");
+            }
+            else
+            {
+                printf("签名公钥运算结果与明文数据比较成功。\n");
+            }
+
+        if (encKeyBits > 0)
+        {
+            inData[0] = 0;
+
+            ret = GenerateRandom(hSession, encKeyBits / 8 - 1, &inData[1]);
+            if (ret != SDR_OK)
+            {
+                if (strlen(sPrkAuthCode) != 0)
+                {
+                    ReleasePrivateKeyAccessRight(hSession, keyIndex);
+                }
+
+                printf("产生随机加密数据错误，错误码[0x%08x]\n", ret);
+            }
+            else
+            {
+                printf("产生随机待加密数据成功。\n");
+                PrintData("随机加密数据", inData, encKeyBits / 8, 16);
+            }
+
+            memset(tmpData, 0, sizeof(tmpData));
+            tmpLen = sizeof(tmpData);
+
+
+            //  SGD_RSA_ENC,
+            ret = InternalPrivateKeyOperation_RSA(hSession, keyIndex,inData, encKeyBits / 8, tmpData, &tmpLen);
+            if (ret != SDR_OK)
+            {
+                if (strlen(sPrkAuthCode) != 0)
+                {
+                    ReleasePrivateKeyAccessRight(hSession, keyIndex);
+                }
+
+                printf("加密私钥运算错误，错误码[0x%08x]\n", ret);
+                printf("\n按任意键继续...");
+
+            }
+            else
+            {
+                printf("加密私钥运算成功。\n");
+                PrintData("私钥运算结果", tmpData, tmpLen, 16);
+            }
+
+            memset(outData, 0, sizeof(outData));
+            outDataLen = sizeof(outData);
+
+            //  SGD_RSA_ENC,
+            ret = InternalPublicKeyOperation_RSA(hSession, keyIndex, tmpData, tmpLen, outData, &outDataLen);
+
+            if (ret != SDR_OK)
+            {
+                if (strlen(sPrkAuthCode) != 0)
+                {
+                    ReleasePrivateKeyAccessRight(hSession, keyIndex);
+                }
+
+                printf("加密公钥运算错误，错误码[0x%08x]\n", ret);
+                debug_printf("Error String: %s\n",SDF_GetErrorString(ret));
+
+            }
+            else
+            {
+                printf("加密公钥运算成功。\n");
+                PrintData("加密公钥运算结果", outData, outDataLen, 16);
+            }
+
+            if ((outDataLen != encKeyBits / 8) || (memcmp(inData, outData, outDataLen) != 0))
+            {
+                if (strlen(sPrkAuthCode) != 0)
+                {
+                    ReleasePrivateKeyAccessRight(hSession, keyIndex);
+                }
+
+                printf("加密公钥运算结果与明文数据比较失败。\n");
+
+            }
+            else
+            {
+                printf("加密公钥运算结果与明文数据比较成功。\n");
+            }
+        }
+
+        if (strlen(sPrkAuthCode) != 0)
+        {
+            ret = ReleasePrivateKeyAccessRight(hSession, keyIndex);
+            if (ret != SDR_OK)
+            {
+                printf("释放私钥访问权限错误，错误码[0x%08x]\n", ret);
+                debug_printf("Error String: %s\n",SDF_GetErrorString(ret));
+            }
+            else
+            {
+                printf("释放私钥访问权限成功。\n");
+            }
+        }
+    cleanup:
+    return ;
+}
+
+
+
+
+void IntECCSignTest()
+{
+	int ret = -1;
+    int keyIndex = 1;
+	ECCrefPublicKey pubKey;
+	unsigned char inData[512], tmpData[512];
+    char sPrkAuthCode[128] = "P@ssw0rd";
+    void *hDevice = NULL;
+    void *hSession = NULL;
+    ret = OpenDevice(&hDevice); if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    ret = OpenSession(hDevice, &hSession); if(ret != SDR_OK){ printf("OpenSession failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }
+    ret = ExportSignPublicKey_ECC(hSession, keyIndex, &pubKey);
+
+    if(ret != SDR_OK)
+    {
+        printf("导出签名公钥错误，错误码[0x%08x]\n", ret);
+    }
+    PrintECCPublicKey(&pubKey);
+    if(strlen(sPrkAuthCode) != 0)
+    {
+        ret = GetPrivateKeyAccessRight(hSession, keyIndex, sPrkAuthCode, (unsigned int)strlen(sPrkAuthCode));
+        if(ret != SDR_OK)
+        {
+            printf("获取私钥访问权限错误，错误码[0x%08x]\n", ret);
+        }
+        else
+        {
+            printf("获取私钥访问权限成功。\n");
+        }
+    }
+
+    memset(inData, 0, sizeof(inData));
+
+    ret = GenerateRandom(hSession, pubKey.bits / 8 - 1, &inData[1]);
+    if(ret != SDR_OK)
+    {
+        if(strlen(sPrkAuthCode) != 0)
+        {
+            ReleasePrivateKeyAccessRight(hSession, keyIndex);
+        }
+
+        printf("产生随机签名数据错误，错误码[0x%08x]\n", ret);
+    }
+    else
+    {
+        printf("产生随机签名数据成功。\n");
+
+        PrintData("随机签名数据", inData, pubKey.bits / 8, 16);
+    }
+
+    memset(tmpData, 0, sizeof(tmpData));
+
+    ret = InternalSign_ECC(hSession, keyIndex, inData, pubKey.bits / 8, (ECCSignature *)tmpData);
+    if(ret != SDR_OK)
+    {
+        if(strlen(sPrkAuthCode) != 0)
+        {
+            ReleasePrivateKeyAccessRight(hSession, keyIndex);
+        }
+
+        printf("签名运算错误，错误码[0x%08x]\n", ret);
+    }
+    else
+    {
+        printf("签名运算成功。\n");
+        PrintData("签名运算结果", tmpData, sizeof(ECCSignature), 16);
+    }
+
+    ret = InternalVerify_ECC(hSession, keyIndex, inData, pubKey.bits / 8, (ECCSignature *)tmpData);
+    if(ret != SDR_OK)
+    {
+        if(strlen(sPrkAuthCode) != 0)
+        {
+            ReleasePrivateKeyAccessRight(hSession, keyIndex);
+        }
+
+        printf("验证签名运算错误，错误码[0x%08x]\n", ret);
+    }
+    else
+    {
+        printf("验证签名运算成功。\n");
+    }
+
+    if(strlen(sPrkAuthCode) != 0)
+    {
+        ret = ReleasePrivateKeyAccessRight(hSession, keyIndex);
+        if(ret != SDR_OK)
+        {
+            printf("释放私钥访问权限错误，错误码[0x%08x]\n", ret);
+        }
+        else
+        {
+            printf("释放私钥访问权限成功。\n");
+        }
+    }
+    
+
+cleanup:
+return ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // int Test_ExternalVerify_ECC(){
 //     // 使用外部公钥对ECC签名值进行验证运算
 //     // 输入数据为待签数据的杂凑值
@@ -2974,20 +3646,48 @@ int Test_GenerateKeyPair_ECC(){
        return SDR_NOTSUPPORT;
 }
 int Test_ExternalPrivateKeyOperation_RSA(){
-    RSArefPrivateKey *pucPrivateKey = (RSArefPrivateKey*)malloc(sizeof(RSArefPrivateKey));
-    unsigned int uiInputLength = 32; unsigned char *pucDataInput = (unsigned char*)malloc(uiInputLength);
-    unsigned int *puiOutputLength = (unsigned int*)malloc(sizeof(unsigned int)); unsigned char *pucDataOutput = NULL;
-    if(pucPrivateKey) memset(pucPrivateKey,0,sizeof(RSArefPrivateKey)); if(pucDataInput) memset(pucDataInput,0x16,uiInputLength); if(puiOutputLength){ *puiOutputLength = 256; pucDataOutput = (unsigned char*)malloc(*puiOutputLength); }
-    int ret = ExternalPrivateKeyOperation_RSA(
-        pucPrivateKey,
-        pucDataInput,
-        uiInputLength,
-        pucDataOutput,
-        puiOutputLength);
-    printf("ExternalPrivateKeyOperation: %s\n",SDF_GetErrorString(ret));
-    if(pucPrivateKey) free(pucPrivateKey); if(pucDataInput) free(pucDataInput); if(pucDataOutput) free(pucDataOutput); if(puiOutputLength) free(puiOutputLength);
+    int ret = -1;
+    RSArefPublicKey pubKey;
+    RSArefPrivateKey priKey;
+    void *hDevice = NULL;
+    void *hSession = NULL;
+
+    unsigned char inData[512],outData[512],tmpData[512];
+    unsigned int tmpLen;
+    int pukLen,prkLen;
+    
+	prkLen = FileRead("prikey.0", "rb", (unsigned char *)&priKey, sizeof(priKey));
+	if(prkLen < sizeof(RSArefPrivateKey))
+	{
+		printf("读私钥文件错误。\n");
+	}
+	else
+	{
+		printf("从文件中读取私钥成功。\n");
+	}
+
+    ret = ExternalPrivateKeyOperation_RSA(hSession,&priKey, inData, priKey.bits / 8, tmpData, &tmpLen);
+    printf("ExternalPrivateKeyOperation: %s\n", SDF_GetErrorString(ret));
+    
+
+    
     return ret;
 }
+// int Test_ExternalPrivateKeyOperation_RSA(){
+//     RSArefPrivateKey *pucPrivateKey = (RSArefPrivateKey*)malloc(sizeof(RSArefPrivateKey));
+//     unsigned int uiInputLength = 16; unsigned char *pucDataInput = (unsigned char*)malloc(uiInputLength);
+//     unsigned int *puiOutputLength = (unsigned int*)malloc(sizeof(unsigned int)); unsigned char *pucDataOutput = NULL;
+//     if(pucPrivateKey) memset(pucPrivateKey,0,sizeof(RSArefPrivateKey)); if(pucDataInput) memset(pucDataInput,0x16,uiInputLength); if(puiOutputLength){ *puiOutputLength = 256; pucDataOutput = (unsigned char*)malloc(*puiOutputLength); }
+//     int ret = ExternalPrivateKeyOperation_RSA(
+//         pucPrivateKey,
+//         pucDataInput,
+//         uiInputLength,
+//         pucDataOutput,
+//         puiOutputLength);
+//     printf("ExternalPrivateKeyOperation: %s\n",SDF_GetErrorString(ret));
+//     if(pucPrivateKey) free(pucPrivateKey); if(pucDataInput) free(pucDataInput); if(pucDataOutput) free(pucDataOutput); if(puiOutputLength) free(puiOutputLength);
+//     return ret;
+// }
 int Test_ExternalSign_ECC(){
     // 指定使用外部ECC私钥对数据进行签名运算。
     // 当使用SM2算法时，该输入数据为代签数据经过SM2签名预处理的结果
@@ -3135,6 +3835,8 @@ int Test_ExternalKeyEncryptInit(){
     return SDR_NOTSUPPORT;
 }
 int Test_ExternalKeyHMACInit(){
+
+
     // 三步式带密钥的杂凑运算第一步
 //     int ret = -1; void *hDevice = NULL; void *hSession = NULL; unsigned int uiAlgID = 0; unsigned int uiKeyLength = 16; unsigned char *pucKey = (unsigned char*)malloc(uiKeyLength); if(pucKey) memset(pucKey,0x22,uiKeyLength);
 //     ret = OpenDevice(&hDevice); if(ret != SDR_OK){ printf("OpenDevice failed: %s\n", SDF_GetErrorString(ret)); goto cleanup; }

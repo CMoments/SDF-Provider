@@ -69,6 +69,11 @@ int Test_ExternalKeyEncryptInit();
 int Test_ExternalKeyDecryptInit();
 int Test_ExternalKeyHMACInit();
 
+
+
+void ExtRSAOptTest();
+void IntRSAOptTest();
+void IntECCSignTest();
 typedef struct 
 {
     const char *name;

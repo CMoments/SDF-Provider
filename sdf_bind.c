@@ -64,6 +64,11 @@ SDF_ReadFile ReadFile = NULL;
 SDF_WriteFile WriteFile = NULL;
 SDF_DeleteFile DeleteFile = NULL;
 
+
+// Ext
+SDF_InternalEncrypt_ECC InternalEncrypt_ECC = NULL;
+SDF_InternalDecrypt_ECC InternalDecrypt_ECC = NULL;
+
 /*  这里的调试验证类函数，需要软实现，以完成对上边函数的调试。 */
 SDF_GenerateKeyPair_RSA GenerateKeyPair_RSA = NULL;
 SDF_GenerateKeyPair_ECC GenerateKeyPair_ECC = NULL;
@@ -152,5 +157,17 @@ int sdf_bind_init(void *handle) {
     ExternalKeyEncryptInit = (SDF_ExternalKeyEncryptInit)dlsym(handle, "SDF_ExternalKeyEncryptInit");
     ExternalKeyDecryptInit = (SDF_ExternalKeyDecryptInit)dlsym(handle, "SDF_ExternalKeyDecryptInit");
     ExternalKeyHMACInit = (SDF_ExternalKeyHMACInit)dlsym(handle, "SDF_ExternalKeyHMACInit");
+    
+    
+    
+    
+    // 扩展接口
+    InternalEncrypt_ECC = (SDF_InternalEncrypt_ECC)dlsym(handle,"SDF_InternalEncrypt_ECC");
+    InternalDecrypt_ECC = (SDF_InternalDecrypt_ECC)dlsym(handle,"SDF_InternalDecrypt_ECC");
+
+    
+    
+    
+    
     return 0;
 }
