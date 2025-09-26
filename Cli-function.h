@@ -3,21 +3,26 @@ int Test_Session();
 int Test_GetDeviceInfo();
 int Test_GenerateRandom();
 int Test_PrivateKeyAccessRight();
-int Test_ExportSignPublicKey_RSA();
-int Test_ExportEncPublic_RSA();
-int Test_GenerateKeyWithIPK_RSA();
-int Test_GenerateKeyWithEPK_RSA();
-int Test_ImportKeyWithISK_RSA();
-int Test_ExportSignPublicKey_ECC();
-int Test_ExportEncPublicKey_ECC();
-int Test_GenerateKeyWithIPK_ECC();
-int Test_GenerateKeyWithEPK_ECC();
-int Test_ImportKeyWithISK_ECC();
+int Test_ExportSignPublicKey_RSA(unsigned int KeyIndex);
+int Test_ExportEncPublic_RSA(unsigned int KeyIndex);
+
+
+int Test_GenerateKeyWithIPK_RSA(unsigned int KeyIndex);
+int Test_GenerateKeyWithEPK_RSA(unsigned int KeyIndex);
+
+int Test_ImportKeyWithISK_RSA(unsigned int KeyIndex);
+int Test_ExportSignPublicKey_ECC(unsigned int KeyIndex);
+int Test_ExportEncPublicKey_ECC(unsigned int KeyIndex);
+
+int Test_GenerateKeyWithIPK_ECC(unsigned int KeyIndex);
+int Test_GenerateKeyWithEPK_ECC(unsigned int KeyIndex);
+
+int Test_ImportKeyWithISK_ECC(unsigned int KeyIndex);
 int Test_GenerateAgreementDataWithECC();
 int Test_GenerateKeyWithECC();
 int Test_GenerateAgreementDataAndKeyWithECC();
-int Test_GenerateKeyWithKEK();
-int Test_ImportKeyWithKEK();
+int Test_GenerateKeyWithKEK(unsigned int KeyIndex);
+int Test_ImportKeyWithKEK(unsigned int KeyIndex);
 int Test_DestroyKey();
 int Test_ExternalPublicKeyOperation_RSA();
 int Test_InternalPublicKeyOperation_RSA();
@@ -31,6 +36,9 @@ int Test_Decrypt();
 int Test_CalculateMAC();
 int Test_AuthEnc();
 int Test_AuthDec();
+
+
+
 int Test_EncryptInit();
 int Test_EncryptUpdate();
 int Test_EncryptFinal();
@@ -74,6 +82,12 @@ int Test_ExternalKeyHMACInit();
 void ExtRSAOptTest();
 void IntRSAOptTest();
 void IntECCSignTest();
+void ExtECCOptTest();
+void ExtECCSignTest();
+// void IntECCOptTest();
+
+void SymmEncDecTest();
+
 typedef struct 
 {
     const char *name;

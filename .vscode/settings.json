@@ -1,6 +1,10 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "sdf_defs.h": "c"
+        "sdf_defs.h": "c",
+        "algmark.h": "c",
+        "string.h": "c",
+        "stdlib.h": "c",
+        "sdf_bind.h": "c"
     }
 }

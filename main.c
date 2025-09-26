@@ -38,11 +38,11 @@ int importkeywith_isk_ecc = 0;
 
 int extrsatest = 0;
 int intrsatest = 0;
-
 int inteccsigntest = 0;
 int exteccsigntest = 0;
 int exteccenctest = 0;
 
+int symencdectest = 0; 
 void print_help(void) {
     printf("SDF命令行工具 - 基于GM/T 0018-2012标准\n\n");
     printf("用法: sdf-tool [选项]\n\n");
@@ -167,7 +167,7 @@ int main(int argc,char *argv[]){
         {"exteccsigntest",no_argument,NULL,16},
         {"exteccenctest",no_argument,NULL,17},
 
-
+        {"symencdectest",no_argument,NULL,18},
         {"help",no_argument,NULL,'h'},
         {"version",no_argument,NULL,'v'},
         // {},
@@ -252,6 +252,9 @@ int main(int argc,char *argv[]){
             case 17:
                 exteccenctest = 1;
                 break;
+            case 18:
+                symencdectest = 1;
+                break;
             default:
                 exit(1);
         }
@@ -314,10 +317,13 @@ int main(int argc,char *argv[]){
         IntECCSignTest();
     }
     if(exteccsigntest){
-
+        ExtECCSignTest();
     }
     if(exteccenctest){
-
+        ExtECCOptTest();
+    }
+    if(symencdectest){
+        SymmEncDecTest();
     }
 
     return 0;

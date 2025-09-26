@@ -117,6 +117,7 @@ unsigned int FileRead(char *filename, char *mode, unsigned char *buffer, size_t 
 
 	return rwed;
 }
+
 void PrintRSAPublicKey(RSArefPublicKey* pubKey){
     /*
     typedef struct RSArefPublicKey_st{
@@ -535,17 +536,6 @@ cleanup:
     return ret;
 }
 
-
-
-
-
-
-
-
-
-
-
-
 void ExtRSAOptTest()
 {
 	unsigned int rv;
@@ -679,6 +669,305 @@ cleanup:
     if(pubKey){ free(pubKey);} 
     return ret;
 }
+
+
+
+void ExtECCSignTest()
+{
+    void *hDevice = NULL;
+    void* hSessionHandle = NULL;
+	int rv;
+	ECCrefPublicKey pubKey;
+	ECCrefPrivateKey priKey;
+	unsigned char inData[512], tmpData[512];
+	int pukLen, prkLen;
+
+    rv = OpenDevice(&hDevice);
+    if(rv != SDR_OK){
+        printf("OpenDevice failed: %s\n", SDF_GetErrorString(rv));
+        return ;
+    }
+    rv = OpenSession(hDevice, &hSessionHandle);
+    if(rv != SDR_OK){
+        printf("OpenSession failed: %s\n", SDF_GetErrorString(rv));
+        return ;
+    }
+
+	prkLen = FileRead("data/prikey_ecc.0", "rb", (unsigned char *)&priKey, sizeof(ECCrefPrivateKey));
+	if(prkLen < sizeof(ECCrefPrivateKey))
+	{
+		printf("读私钥文件错误。\n");
+	}
+	else
+	{
+		printf("从文件中读取私钥成功。\n");
+	}
+
+	pukLen = FileRead("data/pubkey_ecc.0", "rb", (unsigned char *)&pubKey, sizeof(ECCrefPublicKey));
+	if(pukLen < sizeof(ECCrefPublicKey))
+	{
+		printf("读公钥文件错误。\n");
+		printf("\n按任意键继续...");
+	}
+	else
+	{
+		printf("从文件中读取公钥成功。\n");
+	}
+
+	memset(inData, 0, sizeof(inData));
+
+	rv = GenerateRandom(hSessionHandle, priKey.bits / 8 - 1, &inData[1]);
+	if(rv != SDR_OK)
+	{
+		printf("产生随机签名数据错误，错误码[0x%08x]\n", rv);
+	}
+	else
+	{
+		printf("产生随机签名数据成功。\n");
+
+		PrintData("随机签名数据", inData, priKey.bits / 8, 16);
+	}
+
+	memset(tmpData, 0, sizeof(tmpData));
+    // typedef int (*SDF_ExternalSign_ECC)(unsigned int uiAlgID, ECCrefPrivateKey *pucPrivateKey, unsigned char *pucDataInput, unsigned int uiInputLength, ECCSignature *pucSignature);
+
+	rv = ExternalSign_ECC(hSessionHandle,SGD_SM2_1, &priKey, inData, priKey.bits/8, (ECCSignature *)tmpData);
+	if(rv != SDR_OK)
+	{
+		printf("签名运算错误，错误码[0x%08x]\n", rv);
+	}
+	else
+	{
+		printf("签名运算成功。\n");
+
+		PrintData("私钥签名运算结果", tmpData, sizeof(ECCSignature), 16);
+	}
+
+	rv = ExternalVerify_ECC(hSessionHandle, SGD_SM2_1, &pubKey, inData, priKey.bits/8, (ECCSignature *)tmpData);
+	if(rv != SDR_OK)
+	{
+		printf("验证签名运算错误，错误码[0x%08x]\n", rv);
+	}
+	else
+	{
+		printf("验证签名运算成功。\n");
+	}
+
+
+}
+
+// void IntECCOptTest()
+// {
+// 	int rv, keyIndex;
+// 	ECCrefPublicKey encPubKey;
+//     void *hDevice = NULL;
+//     void *hSessionHandle = NULL;
+// 	unsigned char inData[512], outData[512], tmpData[512];
+// 	unsigned int outDataLen;
+// 	char sPrkAuthCode[128];
+// 	int nKeyLen = 32;
+// 	int uiDataLength;
+
+//         printf("内部ECC密钥对加解密运算测试:\n");
+//         //导出ECC加密公钥
+//         rv = ExportEncPublicKey_ECC(hSessionHandle, keyIndex, &encPubKey);
+//         if(rv != SDR_OK)
+//         {
+//             printf("导出加密公钥错误，错误码[0x%08x]\n", rv);
+//         }
+
+//         rv = GenerateRandom(hSessionHandle, uiDataLength, &inData[0]);
+//         if(rv != SDR_OK)
+//         {
+//             printf("产生随机加密数据错误，错误码[0x%08x]\n", rv);
+//         }
+//         else
+//         {
+//             printf("产生随机加密数据成功。\n");
+
+//             PrintData("随机加密数据", inData, uiDataLength, 16);
+//         }
+//         if(strlen(sPrkAuthCode) != 0)
+//         {
+//             rv = GetPrivateKeyAccessRight(hSessionHandle, keyIndex, sPrkAuthCode, (unsigned int)strlen(sPrkAuthCode));
+//             if(rv != SDR_OK)
+//             {
+//                 printf("获取私钥访问权限错误，错误码[0x%08x]\n", rv);
+//                 printf("\n按任意键继续...");
+//             }
+//             else
+//             {
+//                 printf("获取私钥访问权限成功。\n");
+//             }
+//         }
+
+//         memset(tmpData, 0, sizeof(tmpData));
+
+//         rv = InternalEncrypt_ECC(hSessionHandle, keyIndex, SGD_SM2_3, inData, uiDataLength, (ECCCipher *)tmpData);
+//         if(rv != SDR_OK)
+//         {
+//             if(strlen(sPrkAuthCode) != 0)
+//             {
+//                 ReleasePrivateKeyAccessRight(hSessionHandle, keyIndex);
+//             }
+
+//             printf("公钥钥运算错误，错误码[0x%08x]\n", rv);
+//             printf("\n按任意键继续...");
+//         }
+//         else
+//         {
+//             printf("公钥运算成功。\n");
+//         }
+
+//         rv = InternalDecrypt_ECC(hSessionHandle, keyIndex, SGD_SM2_3, (ECCCipher *)tmpData, outData, &outDataLen);
+//         if(rv != SDR_OK)
+//         {
+//             if(strlen(sPrkAuthCode) != 0)
+//             {
+//                 ReleasePrivateKeyAccessRight(hSessionHandle, keyIndex);
+//             }
+
+//             printf("私钥运算错误，错误码[0x%08x]\n", rv);
+//             printf("\n按任意键继续...");
+//         }
+//         else
+//         {
+//             printf("私钥运算成功。\n");
+
+//             PrintData("私钥运算结果", outData, outDataLen, 16);
+//         }
+
+//         if(strlen(sPrkAuthCode) != 0)
+//         {
+//             rv = ReleasePrivateKeyAccessRight(hSessionHandle, keyIndex);
+//             if(rv != SDR_OK)
+//             {
+//                 printf("释放私钥访问权限错误，错误码[0x%08x]\n", rv);
+//                 printf("\n按任意键继续...");
+//             }
+//             else
+//             {
+//                 printf("释放私钥访问权限成功。\n");
+//             }
+//         }
+
+//         if((uiDataLength != outDataLen) || (memcmp(inData, outData, outDataLen) != 0))
+//         {
+//             printf("结果比较失败。\n");
+//         }
+//         else
+//         {
+//             printf("结果比较成功。\n");
+//         }
+
+// 	return ;
+// }
+void ExtECCOptTest()
+{
+    void *hDevice = NULL;
+    void *hSessionHandle = NULL;
+	int rv;
+    #define ECCref_MAX_CIPHER_LEN			136
+	ECCrefPublicKey pubKey;
+	ECCrefPrivateKey priKey;
+	unsigned char inData[512], outData[512], tmpData[512];
+	unsigned int outDataLen;
+	int pukLen, prkLen;
+	unsigned int inPlainLen;
+
+    rv = OpenDevice(&hDevice);
+    if(rv != SDR_OK){
+        printf("OpenDevice failed: %s\n", SDF_GetErrorString(rv));
+        return ;
+    }
+    rv = OpenSession(hDevice, &hSessionHandle);
+    if(rv != SDR_OK){
+        printf("OpenSession failed: %s\n", SDF_GetErrorString(rv));
+        return ;
+    }
+
+	prkLen = FileRead("data/prikey_ecc.0", "rb", (unsigned char *)&priKey, sizeof(priKey));
+	if(prkLen < sizeof(ECCrefPrivateKey))
+	{
+		printf("读私钥文件错误。\n");
+	}
+	else
+	{
+		printf("从文件中读取私钥成功。\n");
+	}
+
+	pukLen = FileRead("data/pubkey_ecc.0", "rb", (unsigned char *)&pubKey, sizeof(pubKey));
+	if(pukLen < sizeof(ECCrefPublicKey))
+	{
+		printf("读公钥文件错误。\n");
+	}
+	else
+	{
+		printf("从文件中读取公钥成功。\n");
+	}
+
+	//通过生成随机数从而设定明文数据长度
+	rv = GenerateRandom(hSessionHandle, 1, &inData[0]);
+	if(rv != SDR_OK)
+	{
+		printf("产生随机数错误，错误码[0x%08x]\n", rv);
+	}
+
+	inPlainLen = (inData[0] % ECCref_MAX_CIPHER_LEN) + 1;
+
+	memset(inData, 0, sizeof(inData));
+
+	rv = GenerateRandom(hSessionHandle, inPlainLen, &inData[0]);
+	if(rv != SDR_OK)
+	{
+		printf("产生随机加密数据错误，错误码[0x%08x]\n", rv);
+	}
+	else
+	{
+		printf("产生随机加密数据成功。\n");
+
+		PrintData("随机加密数据", inData, inPlainLen, 16);
+	}
+
+	memset(tmpData, 0, sizeof(tmpData));
+
+	rv = ExternalEncrypt_ECC(hSessionHandle, SGD_SM2_3, &pubKey, inData, inPlainLen, (ECCCipher *)tmpData);
+	if(rv != SDR_OK)
+	{
+		printf("公钥钥运算错误，错误码[0x%08x]\n", rv);
+	}
+	else
+	{
+		printf("公钥运算成功。\n");
+		PrintData("公钥运算结果", tmpData, sizeof(tmpData), 16);
+	}
+
+	memset(outData, 0, sizeof(outData));
+	outDataLen = sizeof(outData);
+
+	rv = ExternalDecrypt_ECC(hSessionHandle,SGD_SM2_3, &priKey, (ECCCipher *)tmpData, outData, &outDataLen);
+	if(rv != SDR_OK)
+	{
+		printf("私钥运算错误，错误码[0x%08x]\n", rv);
+	}
+	else
+	{
+		printf("私钥运算成功。\n");
+
+		PrintData("私钥运算结果", outData, outDataLen, 16);
+	}
+
+	if((inPlainLen != outDataLen) || (memcmp(inData, outData, outDataLen) != 0))
+	{
+		printf("结果比较失败。\n");
+	}
+	else
+	{
+		printf("结果比较成功。\n");
+	}
+}
+
+
 int Test_ExportEncPublic_RSA(unsigned int KeyIndex){
     int ret = -1;
     void* hDevice = NULL;
@@ -1969,17 +2258,205 @@ return ;
 
 
 
+void  SymmEncDecTest()
+{
+	// int rv;
+	// int step = 0;
+	// int i = 1;
+	// unsigned int puiAlg[20];
+	// int nSelAlg = 1;
+	// int nInlen, nEnclen, nOutlen;
+	// DEVICEINFO stDeviceInfo;
+	// unsigned char pIv[16], pIndata[MAX_DATA_LENGTH], pEncdata[MAX_DATA_LENGTH], pOutdata[MAX_DATA_LENGTH];
+    // int nMyPos;
+    // void *hDevice = NULL;
+    // void *hSessionHandle = NULL;
+    // void *phKeyHandle = NULL;
+	// printf("\n");
+	// printf("\n");
+	// printf("对称运算加解密测试:\n");
+	// printf("---------------------\n");
+	// printf("\n");
+	// printf("\n");
+
+	// //判定对称密钥句柄是否有效
+	// if(phKeyHandle == NULL)
+	// {
+	// 	printf("会话密钥句柄无效，请确认密钥已产生/导入...\n");
+	// }
 
 
+	// memset(&stDeviceInfo, 0, sizeof(DEVICEINFO));
 
+	// rv = GetDeviceInfo(hSessionHandle, &stDeviceInfo);
+	// if(rv != SDR_OK)
+	// {
+	// 	printf("\n获取设备信息错误，错误码[0x%08x]\n", rv);
+	// }
 
+	// while(1)
+	// {
+	// 	switch(step)
+	// 	{
+	// 	case 0:
+	// 		printf("\n");
+	// 		printf("对称运算加解密测试:\n");
+	// 		printf("---------------------\n");
+	// 		printf("\n");
+	// 		printf("从以下支持的算法中选择一项进行测试。\n");
+	// 		printf("\n");
 
+	// 		i=1;
 
+	// 		if(stDeviceInfo.SymAlgAbility & SGD_SM1_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_SM1_ECB\n\n", i);
+	// 			puiAlg[i++]=SGD_SM1_ECB;
+	// 			printf("  %2d | SGD_SM1_CBC\n\n", i);
+	// 			puiAlg[i++]=SGD_SM1_CBC;
+	// 		}
+	// 		if(stDeviceInfo.SymAlgAbility & SGD_SSF33_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_SSF33_ECB\n\n", i);
+	// 			puiAlg[i++]=SGD_SSF33_ECB;
+	// 			printf("  %2d | SGD_SSF33_CBC\n\n", i);
+	// 			puiAlg[i++]=SGD_SSF33_CBC;
+	// 		}
+	// 		if(stDeviceInfo.SymAlgAbility & SGD_AES_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_AES_ECB\n\n", i);
+	// 			puiAlg[i++]=SGD_AES_ECB;
+	// 			printf("  %2d | SGD_AES_CBC\n\n", i);
+	// 			puiAlg[i++]=SGD_AES_CBC;
+	// 		}
+	// 		if(stDeviceInfo.SymAlgAbility & SGD_DES_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_DES_ECB\n\n", i);
+	// 			puiAlg[i++]=SGD_DES_ECB;
+	// 			printf("  %2d | SGD_DES_CBC\n\n", i);
+	// 			puiAlg[i++]=SGD_DES_CBC;
+	// 		}
+	// 		if(stDeviceInfo.SymAlgAbility & SGD_3DES_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_3DES_ECB\n\n", i);
+	// 			puiAlg[i++]=SGD_3DES_ECB;
+	// 			printf("  %2d | SGD_3DES_CBC\n\n", i);
+	// 			puiAlg[i++]=SGD_3DES_CBC;
+	// 		}
+	// 		if(stDeviceInfo.SymAlgAbility & SGD_SM4_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_SM4_ECB\n\n", i);
+	// 			puiAlg[i++]=SGD_SM4_ECB;
+	// 			printf("  %2d | SGD_SM4_CBC\n\n", i);
+	// 			// printf("   ")
+	// 			puiAlg[i++]=SGD_SM4_CBC;
+	// 		}
+	// 		if(stDeviceInfo.SymAlgAbility & SGD_SM7_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_SM7_ECB\n\n", i);
+	// 			puiAlg[i++]=SGD_SM7_ECB;
+	// 			printf("  %2d | SGD_SM7_CBC\n\n", i);
+	// 			puiAlg[i++]=SGD_SM7_CBC;
+	// 		}
+	// 		if (stDeviceInfo.SymAlgAbility & SGD_SM6_ECB & SGD_SYMM_ALG_MASK)
+	// 		{
+	// 			printf("  %2d | SGD_SM6_ECB\n\n", i);
+	// 			puiAlg[i++] = SGD_SM6_ECB;
+	// 			printf("  %2d | SGD_SM6_CBC\n\n", i);
+	// 			puiAlg[i++] = SGD_SM6_CBC;
+	// 		}
 
+	// 		printf("\n");
+	// 		printf("\n选择加密算法(默认[%d])，或 [退出(Q)] [返回(R)] [下一步(N)]>", 1);
+	// 		// nSelAlg = GetInputLength(1, 1, i-1);
+    //         scanf("%d",&nSelAlg);
 
+	// 		if((nSelAlg < 1) || (nSelAlg > i-1))
+	// 		{
+	// 			printf("\n输入参数无效\n");
+	// 			break;
+	// 		}
+	// 		else
+	// 			step++;
 
+	// 		break;
+	// 	case 1:
+	// 		printf("\n");
+	// 		printf("\n");
+	// 		printf("\n");
+	// 		printf("对称运算加解密测试:\n");
+	// 		printf("---------------------\n");
+	// 		printf("\n");
+	// 		printf("请选择输入数据的长度，必须为分组长度的整数倍(程序支持的最大长度为%s)。\n", MAX_DATA_KB_LENGTH_STR);
+	// 		printf("\n");
+	// 		printf("\n");
+	// 		printf("\n输入数据长度(默认[1024])，或 [退出(Q)] [返回(R)] [上一步(P)] [下一步(N)]>");
+	// 		// nInlen = GetInputLength(1024, 16, MAX_DATA_LENGTH);
+    //         scanf("%d",&nInlen);
+	// 		if((nInlen < 16) || (nInlen > MAX_DATA_LENGTH))
+	// 		{
+	// 			printf("\n输入参数无效\n");
+	// 			break;
+	// 		}
+	// 		else
+	// 			step++;
 
+	// 		break;
+	// 	case 2:
 
+	// 		printf("\n");
+	// 		printf("\n");
+	// 		printf("\n");
+	// 		printf("\n");
+	// 		printf("\n");
+	// 		printf("对称运算加解密测试\n");
+	// 		printf("---------------\n");
+	// 		printf("\n");
+	// 		printf("算法标识：0x%08x\n", puiAlg[nSelAlg]);
+	// 		printf("数据长度：%d\n", nInlen);
+			
+	// 		memset(pIv, 0, 16);
+
+	// 		rv = GenerateRandom(hSessionHandle, nInlen, pIndata);
+	// 		if(rv == SDR_OK)
+	// 		{
+	// 			rv = Encrypt(hSessionHandle, phKeyHandle, puiAlg[nSelAlg], pIv, pIndata, nInlen, pEncdata, &nEnclen);
+	// 			if(rv == SDR_OK)
+	// 			{
+	// 				memset(pIv, 0, 16);
+
+	// 				rv = Decrypt(hSessionHandle, phKeyHandle, puiAlg[nSelAlg], pIv, pEncdata, nEnclen, pOutdata, &nOutlen);
+	// 				if(rv == SDR_OK)
+	// 				{
+	// 					if((nOutlen == nInlen) && (memcmp(pOutdata, pIndata, nInlen) == 0))
+	// 					{
+	// 						printf("运算结果：加密、解密及结果比较均正确。\n");
+	// 					}
+	// 					else
+	// 					{
+	// 						printf("运算结果：解密结果错误。\n");
+	// 					}
+	// 				}
+	// 				else
+	// 				{
+	// 					printf("运算结果：解密错误，[0x%08x]\n", rv);
+	// 				}
+	// 			}
+	// 			else
+	// 			{
+	// 				printf("运算结果：加密错误，[0x%08x]\n", rv);
+	// 			}
+	// 		}
+	// 		else
+	// 		{
+	// 			printf("运算结果：产生随机加密数据错误，[0x%08x]\n", rv);
+	// 		}
+	// 	}
+	// }    
+    Test_Encrypt();
+    Test_Decrypt();
+
+}
 
 
 
