@@ -43,29 +43,48 @@ int exteccsigntest = 0;
 int exteccenctest = 0;
 
 int symencdectest = 0; 
+int calculatemac = 0;
 void print_help(void) {
     printf("SDF命令行工具 - 基于GM/T 0018-2012标准\n\n");
     printf("用法: sdf-tool [选项]\n\n");
+    
     printf("设备管理选项:\n");
     printf("  -i, --device-info             显示设备信息\n");
     printf("  -r, --random LENGTH           生成指定长度的随机数\n");
-    // printf("\n密钥管理选项:\n");
-    // printf("  -e, --export-pubkey-ecc INDEX 导出ECC公钥\n");
-    // printf("  -E, --export-pubkey-rsa INDEX 导出RSA公钥\n");
-    // printf("  -g, --generate-session        生成会话密钥\n");
-    // printf("\n密码运算选项:\n");
-    // printf("  -s, --sign-ecc INDEX          ECC签名\n");
-    // printf("  -v, --verify-ecc              ECC验证\n");
-    // printf("\n通用参数:\n");
-    // printf("  -D, --device PATH             设备路径(默认: /dev/sdf0)\n");
-    // printf("  -k, --key-index INDEX         密钥索引(默认: 1)\n");
-    // printf("  -f, --data FILE               数据文件\n");
-    // printf("  -S, --sig FILE                签名文件\n");
-    // printf("  -p, --pubkey FILE             公钥文件\n");
-    // printf("  -o, --output FILE             输出文件\n");
-    // printf("  -l, --length LENGTH           数据长度\n");
+    
+    printf("\n非对称公钥导出选项:\n");
+    printf("  --export-encpubkey-ecc INDEX  导出ECC加密公钥\n");
+    printf("  --export-signpubkey-ecc INDEX 导出ECC签名公钥\n");
+    printf("  --export-encpubkey-rsa INDEX  导出RSA加密公钥\n");
+    printf("  --export-signpubkey-rsa INDEX 导出RSA签名公钥\n");
+    
+    printf("\n会话密钥生成选项:\n");
+    printf("  --generatekeywith-kek INDEX   使用KEK产生会话密钥\n");
+    printf("  --generatekeywith-ipk-rsa INDEX 使用RSA内部公钥产生会话密钥\n");
+    printf("  --generatekeywith-epk-rsa INDEX 使用RSA外部公钥产生会话密钥\n");
+    printf("  --generatekeywith-ipk-ecc INDEX 使用ECC内部公钥产生会话密钥\n");
+    printf("  --generatekeywith-epk-ecc INDEX 使用ECC外部公钥产生会话密钥\n");
+    
+    printf("\n会话密钥导入选项:\n");
+    printf("  --importkeywith-kek INDEX     使用KEK导入会话密钥\n");
+    printf("  --importkeywith-isk-rsa INDEX 使用RSA内部私钥导入会话密钥\n");
+    printf("  --importkeywith-isk-ecc INDEX 使用ECC内部私钥导入会话密钥\n");
+    
+    printf("\n密码运算测试选项:\n");
+    printf("  --extrsatest                  外部RSA运算测试\n");
+    printf("  --intrsatest                  内部RSA运算测试\n");
+    printf("  --inteccsigntest              内部ECC签名测试\n");
+    printf("  --exteccsigntest              外部ECC签名测试\n");
+    printf("  --exteccenctest               外部ECC加密测试\n");
+    printf("  --symencdectest               对称加密解密测试\n");
+    printf("  --calculatemac                计算MAC测试\n");
+    
+    printf("\n通用选项:\n");
     printf("  -h, --help                    显示此帮助信息\n");
     printf("  -v, --version                 显示版本信息\n");
+    printf("\n说明:\n");
+    printf("  INDEX参数为密钥索引号，范围为1-100\n");
+    printf("  LENGTH参数为随机数长度，单位为字节\n");
 }
 void print_version(){
     printf("sdf version1.0\n");
@@ -168,6 +187,7 @@ int main(int argc,char *argv[]){
         {"exteccenctest",no_argument,NULL,17},
 
         {"symencdectest",no_argument,NULL,18},
+        {"calculatemac",no_argument,NULL,19},
         {"help",no_argument,NULL,'h'},
         {"version",no_argument,NULL,'v'},
         // {},
@@ -255,6 +275,9 @@ int main(int argc,char *argv[]){
             case 18:
                 symencdectest = 1;
                 break;
+            case 19:
+                calculatemac = 1;
+                break;
             default:
                 exit(1);
         }
@@ -324,6 +347,9 @@ int main(int argc,char *argv[]){
     }
     if(symencdectest){
         SymmEncDecTest();
+    }
+    if(calculatemac){
+        Test_CalculateMAC();
     }
 
     return 0;
