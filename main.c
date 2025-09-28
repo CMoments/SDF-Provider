@@ -44,6 +44,7 @@ int exteccenctest = 0;
 
 int symencdectest = 0; 
 int calculatemac = 0;
+#ifdef DEBUG
 void print_help(void) {
     printf("SDF命令行工具 - 基于GM/T 0018-2012标准\n\n");
     printf("用法: sdf-tool [选项]\n\n");
@@ -86,9 +87,50 @@ void print_help(void) {
     printf("  INDEX参数为密钥索引号，范围为1-100\n");
     printf("  LENGTH参数为随机数长度，单位为字节\n");
 }
-void print_version(){
-    printf("sdf version1.0\n");
+#else
+void print_help(void) {
+    printf("SDF Command Line Tool - Based on GM/T 0018-2012 Standard\n\n");
+    printf("Usage: sdf-tool [OPTIONS]\n\n");
+    
+    printf("Device Management Options:\n");
+    printf("  -i, --device-info             Display device information\n");
+    printf("  -r, --random LENGTH           Generate random number of specified length\n");
+    
+    printf("\nAsymmetric Public Key Export Options:\n");
+    printf("  --export-encpubkey-ecc INDEX  Export ECC encryption public key\n");
+    printf("  --export-signpubkey-ecc INDEX Export ECC signature public key\n");
+    printf("  --export-encpubkey-rsa INDEX  Export RSA encryption public key\n");
+    printf("  --export-signpubkey-rsa INDEX Export RSA signature public key\n");
+    
+    printf("\nSession Key Generation Options:\n");
+    printf("  --generatekeywith-kek INDEX   Generate session key using KEK\n");
+    printf("  --generatekeywith-ipk-rsa INDEX Generate session key using RSA internal public key\n");
+    printf("  --generatekeywith-epk-rsa INDEX Generate session key using RSA external public key\n");
+    printf("  --generatekeywith-ipk-ecc INDEX Generate session key using ECC internal public key\n");
+    printf("  --generatekeywith-epk-ecc INDEX Generate session key using ECC external public key\n");
+    
+    printf("\nSession Key Import Options:\n");
+    printf("  --importkeywith-kek INDEX     Import session key using KEK\n");
+    printf("  --importkeywith-isk-rsa INDEX Import session key using RSA internal private key\n");
+    printf("  --importkeywith-isk-ecc INDEX Import session key using ECC internal private key\n");
+    
+    printf("\nCryptographic Operation Test Options:\n");
+    printf("  --extrsatest                  External RSA operation test\n");
+    printf("  --intrsatest                  Internal RSA operation test\n");
+    printf("  --inteccsigntest              Internal ECC signature test\n");
+    printf("  --exteccsigntest              External ECC signature test\n");
+    printf("  --exteccenctest               External ECC encryption test\n");
+    printf("  --symencdectest               Symmetric encryption/decryption test\n");
+    printf("  --calculatemac                Calculate MAC test\n");
+    
+    printf("\nGeneral Options:\n");
+    printf("  -h, --help                    Display this help message\n");
+    printf("  -v, --version                 Display version information\n");
+    printf("\nNotes:\n");
+    printf("  INDEX parameter is key index number, range 1-100\n");
+    printf("  LENGTH parameter is random number length in bytes\n");
 }
+#endif
 void printAlgInfo(){
     void *hDevice = NULL;
     void *hSession = NULL;
@@ -145,6 +187,12 @@ cleanup:
     if(hSession)free(hSession);
     if(hDevice)free(hDevice);
 }
+void print_version(){
+    printf("sdf version1.0\n\n");
+
+    printAlgInfo();
+}
+
 int main(int argc,char *argv[]){
     void *handle = dlopen("./libswsds.so", RTLD_LAZY);
     if (!handle) {
@@ -194,6 +242,10 @@ int main(int argc,char *argv[]){
         {0,0,0,0}
     };
     const char *optstring = "ir:hv";
+    if (argc == 1) {
+        print_help();
+        return 0;
+    }
     while((opt = getopt_long(argc,argv,optstring,long_options,&option_index)) != -1){
         switch (opt)
         {
