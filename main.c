@@ -2,12 +2,13 @@
 #include <dlfcn.h>
 #include "testcases.h"
 #include "sdf_bind.h"
+// #include "swsds.h"
 // Global counters (referenced via extern in testcases.h)
 int pass = 0;
 int fail = 0;
 int notsupport = 0;
 int main(){
-    void *handle = dlopen("./libsoftsdf.so", RTLD_LAZY);
+    void *handle = dlopen("./libswsds.so", RTLD_LAZY);
     if (!handle) {
         printf("dlopen error: %s\n", dlerror());
         return 1;

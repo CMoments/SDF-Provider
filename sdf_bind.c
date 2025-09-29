@@ -94,7 +94,15 @@ int sdf_bind_init(void *handle) {
     ImportKeyWithISK_RSA = (SDF_ImportKeyWithISK_RSA)dlsym(handle, "SDF_ImportKeyWithISK_RSA");
     ExportSignPublicKey_ECC = (SDF_ExportSignPublicKey_ECC)dlsym(handle, "SDF_ExportSignPublicKey_ECC");
     ExportEncPublicKey_ECC = (SDF_ExportEncPublicKey_ECC)dlsym(handle, "SDF_ExportEncPublicKey_ECC");
+
     GenerateKeyWithIPK_ECC = (SDF_GenerateKeyWithIPK_ECC)dlsym(handle, "SDF_GenerateKeyWithIPK_ECC");
+    // dlerror();
+    // char *error;
+    //   if ((error = dlerror()) != NULL) {
+    //     fprintf(stderr, "Cannot load symbol 'SDF_GenerateKeyWithIPK_ECC': %s\n", error);
+    //     dlclose(handle);
+    //     return 1;
+    // }
     GenerateKeyWithEPK_ECC = (SDF_GenerateKeyWithEPK_ECC)dlsym(handle, "SDF_GenerateKeyWithEPK_ECC");
     ImportKeyWithISK_ECC = (SDF_ImportKeyWithISK_ECC)dlsym(handle, "SDF_ImportKeyWithISK_ECC");
     GenerateAgreementDataWithECC = (SDF_GenerateAgreementDataWithECC)dlsym(handle, "SDF_GenerateAgreementDataWithECC");
