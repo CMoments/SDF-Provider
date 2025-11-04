@@ -1,0 +1,26 @@
+1、首先确保你已经安装了 Tongsuo 或 OpenSSL 3.0+ 开发包，编译 provider 为动态库:
+
+gcc -shared -o tongsuo-provider.so -fPIC tongsuo_provider.c -I/opt/tongsuo/include -L/opt/tongsuo/lib64 -lcrypto
+
+2、编译测试程序:
+
+gcc -o test_tongsuo_provider test_tongsuo_provider.c -I/opt/tongsuo/include -L/opt/tongsuo/lib64 -lcrypto
+
+3、运行步骤：
+3.1 首先设置库路径（如果需要）:
+export LD_LIBRARY_PATH=/opt/tongsuo/lib64:$LD_LIBRARY_PATH
+
+cp tongsuo-provider.so /opt/tongsuo/lib64/ossl-modules/
+
+
+./test_tongsuo_provider
+
+
+4. 预期输出
+
+如果一切正常，你应该会看到类似以下输出:
+
+plaintext
+Copy
+Tongsuo Provider initialized successfully
+Encryption successful. Output length: 16
