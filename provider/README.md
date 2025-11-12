@@ -46,3 +46,4 @@ Encryption successful. Output length: 16
 
 ---
 
+OK
